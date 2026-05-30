@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.conda/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TF-IDF index (rebuilt via build_index.py)
+backend/knowledge_base/faiss_index/
+
+# Secrets / env
+.env
+*.env
+
+# Logs
+*.log
+
+# Temp
+tmp/
+
+# Wan 2.6 Inpainting – ảnh host tạm
+backend/static_temp/

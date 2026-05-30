@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Willa AI Generator</title>
+  <link rel="stylesheet" href="/static/chat_src/style.css" />
+  <!-- Font Awesome cho icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Willa GenAI</span>
+      </div>
+      <div class="nav-links">
+        <a href="/" class="nav-item"><i class="fa-solid fa-home"></i> Home</a>
+        <a href="/element-layer" class="nav-item"><i class="fa-solid fa-layer-group"></i> Layer Extractor</a>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-comment-dots"></i> Chat</a>
+      </div>
+      
+
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-main">
+      <header class="chat-header">
+        <div class="header-title">
+          <h2>Willa Image Assistant</h2>
+          <span class="status-badge">Powered by xAI & Flux.1</span>
+        </div>
+      </header>
+
+      <div class="chat-history" id="chatHistory">
+        <!-- Lời chào ban đầu -->
+        <div class="message bot-message">
+          <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+          <div class="content">
+            <p>Chào bạn! Tôi là Willa Assistant. Bạn có thể trò chuyện với tôi hoặc yêu cầu tôi vẽ bất cứ thứ gì bạn tưởng tượng ra (ví dụ: "Vẽ cho tôi một phi hành gia cưỡi rồng trên sao Hỏa").</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div class="typing-indicator" id="typingIndicator" style="display: none;">
+        <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+        <div class="dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="chat-input-container">
+        <div class="input-wrapper">
+          <textarea id="chatInput" placeholder="Hỏi Willa hoặc yêu cầu vẽ ảnh..." rows="1"></textarea>
+          <button id="sendBtn" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+        <div class="footer-text">Willa có thể mắc lỗi. Vui lòng kiểm tra lại thông tin quan trọng.</div>
+      </div>
+    </main>
+
+  </div>
+
+  <script type="module" src="/static/chat_src/main.js"></script>
+</body>
+</html>

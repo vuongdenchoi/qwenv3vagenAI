@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qwen Layer Extractor — fal.ai</title>
+  <link rel="stylesheet" href="/static/layer_src/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>🎨 Qwen Layer Extractor</h1>
+        <p>Tách ảnh thành các RGBA layer độc lập · Powered by <strong>Qwen-Image-Layered</strong></p>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <a href="/" style="color: #fff; background: #333; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.9rem;">Quay lại Chat</a>
+        <a href="/grok-chat" style="color: #fff; background: #6b21a8; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.9rem;">Willa Chat</a>
+      </div>
+    </header>
+
+    <!-- Config -->
+    <section class="config">
+      <div class="field">
+        <label>fal.ai API Key</label>
+        <input type="password" id="falKey" placeholder="fal_..." autocomplete="off" />
+        <small>Lấy tại <a href="https://fal.ai/dashboard/keys" target="_blank">fal.ai/dashboard/keys</a></small>
+      </div>
+      <div class="field" style="display: flex; align-items: center; justify-content: center; height: 100%;">
+        <label class="toggle-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px dashed #6366f1; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <input type="checkbox" id="autoDetect" style="width: 18px; height: 18px; accent-color: #6366f1; cursor: pointer;" />
+          <div>
+            <span style="font-weight: 700; color: #4f46e5; display: flex; align-items: center; gap: 4px; font-size: 0.85rem;">
+              ✨ Tự động tối ưu bằng Qwen3-VL
+            </span>
+            <small style="margin-top: 1px; display: block; color: #64748b; font-size: 0.72rem; line-height: 1.2;">
+              Phân tích cấu trúc ảnh để tự động chỉnh tham số layer tối ưu.
+            </small>
+          </div>
+        </label>
+      </div>
+      <div class="field">
+        <label>Số layer muốn tách</label>
+        <div class="slider-row">
+          <input type="range" id="numLayers" min="2" max="10" value="5" />
+          <span class="slider-val" id="numLayersVal">5</span>
+        </div>
+        <small>Nhiều layer hơn = chi tiết hơn nhưng chậm hơn</small>
+      </div>
+      <div class="field">
+        <label>Inference steps</label>
+        <div class="slider-row">
+          <input type="range" id="inferSteps" min="10" max="50" value="30" step="5" />
+          <span class="slider-val" id="inferStepsVal">30</span>
+        </div>
+        <small>Cao hơn = chất lượng tốt hơn, chậm hơn</small>
+      </div>
+      <div class="field">
+        <label>Guidance scale</label>
+        <div class="slider-row">
+          <input type="range" id="guidanceScale" min="1" max="10" value="5" step="0.5" />
+          <span class="slider-val" id="guidanceScaleVal">5</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload -->
+    <section class="upload-zone" id="dropzone">
+      <input type="file" id="fileInput" accept="image/*" />
+      <span class="icon" id="dropIcon">📁</span>
+      <p id="dropText">Kéo thả hoặc click để chọn ảnh</p>
+      <small>PNG, JPG, WEBP — tối đa 10MB</small>
+    </section>
+
+    <!-- Preview -->
+    <div class="preview-wrap" id="previewWrap" style="display:none">
+      <img id="previewImg" alt="preview" />
+      <div class="preview-info" id="previewInfo"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button id="runBtn" disabled>🔍 Tách Layer</button>
+      <button id="downloadAllBtn" disabled>⬇️ Tải tất cả ZIP</button>
+      <button id="resetBtn">🔄 Reset</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap" style="display:none">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Log -->
+    <div class="log-box" id="logBox" style="display:none"></div>
+
+    <!-- Results -->
+    <div id="resultsSection" style="display:none">
+      <!-- AI Analysis Panel -->
+      <div id="qwenAnalysisPanel" class="qwen-analysis-card" style="display:none"></div>
+
+      <div class="results-header">
+        <h2 class="section-title">Layers đã tách</h2>
+        <span class="layer-count" id="layerCount"></span>
+      </div>
+      <div class="layers-grid" id="layersGrid"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/static/layer_src/main.js"></script>
+</body>
+</html>

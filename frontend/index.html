@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WillaAI – Design Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #212121;
+      --bg-header: #171717;
+      --bg-user: #2f2f2f;
+      --bg-ai: #212121;
+      --border: #424242;
+      --text: #ececec;
+      --accent: #10a37f;
+      --rad: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body,
+    html {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      height: 60px;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #fff;
+      z-index: 10;
+    }
+
+    header span {
+      color: var(--accent);
+      margin-left: 6px;
+    }
+
+    /* Main Timeline */
+    #chat-container {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      display: flex;
+      padding: 24px;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .message.user {
+      background: var(--bg-user);
+    }
+
+    .message.ai {
+      background: var(--bg-ai);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .user .avatar {
+      background: #555;
+    }
+
+    .ai .avatar {
+      background: var(--accent);
+      color: white;
+    }
+
+    .content {
+      flex: 1;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .loading-pulse {
+      animation: pulse 1.5s infinite;
+      color: #888;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.5;
+      }
+    }
+
+    /* Attachments in Chat */
+    .chat-attachment {
+      max-width: 300px;
+      max-height: 300px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: block;
+      border: 1px solid var(--border);
+    }
+
+    /* Analysis Card (Canvas + Error List) */
+    .analysis-card {
+      background: #2f2f2f;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 14px;
+      overflow: hidden;
+      max-width: 600px;
+    }
+
+    .analysis-card canvas {
+      width: 100%;
+      display: block;
+      background: #000;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .error-list {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .error-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #3c3c3c;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .error-item .reason {
+      flex: 1;
+      margin: 0 10px;
+    }
+
+    .error-tag {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .tag-minor {
+      background: #f1c40f22;
+      color: #f1c40f;
+    }
+
+    .tag-major {
+      background: #e67e2222;
+      color: #e67e22;
+    }
+
+    .tag-critical {
+      background: #e74c3c22;
+      color: #e74c3c;
+    }
+
+    .zoom-btn {
+      background: var(--border);
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      transition: background .2s;
+    }
+
+    .zoom-btn:hover {
+      background: #555;
+      color: #fff;
+    }
+
+    /* Checkbox trong error-item */
+    .error-check {
+      accent-color: #10a37f;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Visual feedback khi checkbox được tick */
+    .error-item.checked {
+      background: rgba(16, 163, 127, 0.12);
+      border: 1px solid rgba(16, 163, 127, 0.4);
+      opacity: 0.85;
+      transition: all 0.2s ease;
+    }
+
+    .error-item.checked .reason {
+      text-decoration: line-through;
+      color: #888;
+      transition: all 0.2s ease;
+    }
+
+    .error-item {
+      transition: all 0.2s ease;
+    }
+
+    /* Fix Selected button */
+    .fix-selected-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 12px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #10a37f, #0e8c6c);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .fix-selected-btn:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+
+    .fix-selected-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ════════════════════════════════════════
+       Fix Chat Panel (thay thế modal cũ)
+    ════════════════════════════════════════ */
+    #fix-panel-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 900;
+    }
+    #fix-panel-overlay.open { display: block; }
+
+    #fix-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 420px;
+      max-width: 100vw;
+      height: 100vh;
+      background: #1a1a1a;
+      border-left: 1px solid #333;
+      z-index: 950;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.5);
+    }
+    #fix-panel.open { transform: translateX(0); }
+
+    /* Header panel */
+    #fix-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #2a2a2a;
+      background: #141414;
+      flex-shrink: 0;
+    }
+    #fix-panel-header .panel-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    #fix-panel-title {
+      flex: 1;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    #fix-panel-subtitle {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 1px;
+    }
+    #fix-panel-close {
+      background: rgba(255,255,255,0.06);
+      border: none;
+      color: #aaa;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    #fix-panel-close:hover { background: #333; color: #fff; }
+
+    /* Chat area trong panel */
+    #fix-panel-chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    /* Message bubbles trong fix panel */
+    .fix-msg {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .fix-msg.fix-user { flex-direction: row-reverse; }
+
+    .fix-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .fix-msg.fix-ai .fix-avatar { background: linear-gradient(135deg,#a855f7,#7c3aed); }
+    .fix-msg.fix-user .fix-avatar { background: #3a3a3a; }
+
+    .fix-bubble {
+      max-width: 88%;
+      background: #252525;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      line-height: 1.55;
+      color: #ddd;
+      border: 1px solid #2e2e2e;
+    }
+    .fix-msg.fix-user .fix-bubble {
+      background: #2a2a2a;
+      border-color: #3c3c3c;
+    }
+
+    /* Mask preview trong panel */
+    .fix-mask-img {
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: block;
+      border: 1px solid rgba(255,77,109,0.4);
+    }
+
+    /* Prompt editable box */
+    .fix-prompt-box {
+      margin-top: 10px;
+    }
+    .fix-prompt-label {
+      font-size: 0.72rem;
+      color: #888;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .fix-prompt-textarea {
+      width: 100%;
+      background: #1e1e1e;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 0.82rem;
+      font-family: inherit;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.5;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .fix-prompt-textarea:focus { border-color: #a855f7; }
+
+    /* Action buttons */
+    .fix-action-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .btn-fix-send {
+      flex: 1;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      border: none;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+    .btn-fix-send:hover { opacity: 0.88; }
+    .btn-fix-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-fix-edit {
+      background: #2e2e2e;
+      border: 1px solid #3c3c3c;
+      color: #ccc;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-fix-edit:hover { background: #3a3a3a; color: #fff; }
+
+    /* Input area dưới panel (cho user gõ lệnh trong panel) */
+    #fix-panel-input-area {
+      border-top: 1px solid #2a2a2a;
+      padding: 12px 14px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      background: #141414;
+      flex-shrink: 0;
+    }
+    #fix-panel-input {
+      flex: 1;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #eee;
+      font-family: inherit;
+      font-size: 0.88rem;
+      padding: 9px 12px;
+      resize: none;
+      min-height: 40px;
+      max-height: 120px;
+      outline: none;
+      line-height: 1.5;
+      transition: border-color 0.2s;
+    }
+    #fix-panel-input:focus { border-color: #a855f7; }
+    #fix-panel-input::placeholder { color: #555; }
+    .fix-send-btn {
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .fix-send-btn:hover { opacity: 0.88; }
+
+    /* Spinner */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.2);
+      border-top-color: #a855f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result image */
+    .regen-result-img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+      display: block;
+      border: 2px solid #a855f7;
+    }
+
+    .download-regen-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 8px 14px;
+      background: #3c3c3c;
+      border: 1px solid #555;
+      color: #ddd;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .download-regen-btn:hover {
+      background: #555;
+      color: #fff;
+    }
+
+    /* Input Area */
+    #input-zone {
+      padding: 20px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: flex-end;
+      width: 100%;
+      max-width: 800px;
+      background: #303030;
+      border: 1px solid #4a4a4a;
+      border-radius: 16px;
+      padding: 8px 12px;
+      position: relative;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: #666;
+    }
+
+    .attach-btn {
+      background: none;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 8px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attach-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    #chat-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 10px;
+      resize: none;
+      min-height: 44px;
+      max-height: 200px;
+      outline: none;
+      line-height: 1.5;
+    }
+
+    .send-btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      align-self: flex-end;
+      margin-bottom: 2px;
+    }
+
+    .send-btn:hover {
+      background: #0e8c6c;
+    }
+
+    /* File Preview in Input */
+    #file-preview-wrap {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 10px;
+      background: #303030;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #file-preview-wrap img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .remove-file {
+      background: rgba(255, 0, 0, 0.5);
+      border: none;
+      color: #fff;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 10px;
+    }
+
+    /* ---- Suggestion Chips ---- */
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(16, 163, 127, 0.45);
+      background: rgba(16, 163, 127, 0.08);
+      color: #10a37f;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s, border-color 0.18s, transform 0.12s;
+      user-select: none;
+    }
+
+    .chip:hover {
+      background: rgba(16, 163, 127, 0.18);
+      border-color: #10a37f;
+      transform: translateY(-1px);
+    }
+
+    .chip:active {
+      transform: scale(0.97);
+    }
+
+    /* ---- Input suggestion pill (gợi ý auto-fill) ---- */
+    #input-suggestions {
+      padding: 0 20px 10px;
+      background: var(--bg);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .input-suggestion-pill {
+      padding: 5px 13px;
+      border-radius: 16px;
+      background: #2e2e2e;
+      border: 1px solid #4a4a4a;
+      color: #aaa;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .input-suggestion-pill:hover {
+      background: #3c3c3c;
+      color: #eee;
+    }
+
+    /* ---- Error highlight khi chip click ---- */
+    .error-item.highlight-flash {
+      animation: flashHighlight 0.7s ease;
+    }
+
+    @keyframes flashHighlight {
+      0%   { background: rgba(16, 163, 127, 0.35); }
+      100% { background: #3c3c3c; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <div>Willa<span>AI</span></div>
+    <div style="display: flex; gap: 10px;">
+      <a href="/element-layer" style="color: #fff; background: var(--accent); padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9rem;">Element Layer</a>
+      <a href="/grok-chat" style="color: #fff; background: #6b21a8; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9rem;"><i class="fa-solid fa-bolt"></i> Willa Chat</a>
+    </div>
+  </header>
+
+  <!-- Fix Chat Panel -->
+  <div id="fix-panel-overlay" onclick="closeFixPanel()"></div>
+  <div id="fix-panel">
+    <div id="fix-panel-header">
+      <div class="panel-icon">🪄</div>
+      <div style="flex:1;">
+        <div id="fix-panel-title">WillaAI - Fix &amp; Regen</div>
+        <div id="fix-panel-subtitle">Chọn lỗi → xem preview → gửi AI sửa ảnh</div>
+      </div>
+      <button id="fix-panel-close" onclick="closeFixPanel()" title="Đóng">×</button>
+    </div>
+    <div id="fix-panel-chat"></div>
+    <div id="fix-panel-input-area">
+      <textarea id="fix-panel-input"
+        placeholder="Gõ lệnh: sửa lỗi 1, fix lỗi 2..."
+        rows="1"
+        oninput="fixPanelAutoGrow(this)"
+        onkeydown="fixPanelCheckEnter(event)"></textarea>
+      <button class="fix-send-btn" onclick="sendFixPanelMessage()">Gửi</button>
+    </div>
+  </div>
+
+
+  <div id="chat-container">
+    <div class="message ai">
+      <div class="avatar">🔍</div>
+      <div class="content">
+        Xin chào! Tôi là WillaAI - Trợ lý phân tích thiết kế của bạn. Bạn có thể up một bức poster, logo hoặc gõ câu hỏi vào bên dưới
+        nhé!
+      </div>
+    </div>
+  </div>
+
+  <!-- Input suggestions bar (hiện khi có errors) -->
+  <div id="input-suggestions"></div>
+
+  <div id="input-zone">
+    <div class="input-wrapper">
+
+      <div id="file-preview-wrap">
+        <img id="file-preview" src="" />
+        <button class="remove-file" onclick="clearFile()">×</button>
+      </div>
+
+      <input type="file" id="file-input" accept="image/*" style="display:none" onchange="previewFile(event)" />
+      <button class="attach-btn" onclick="document.getElementById('file-input').click()">📎</button>
+
+      <textarea id="chat-input" placeholder="Nhắn tin cho WillaAI... (vd: sửa lỗi số 1)" rows="1" oninput="autoGrow(this)"
+        onkeydown="checkEnter(event)"></textarea>
+
+      <button class="send-btn" onclick="sendMessage()">Gửi</button>
+    </div>
+  </div>
+
+  <script>
+    let sessionId = localStorage.getItem('chat_session');
+    if (!sessionId) {
+      sessionId = "sess_" + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('chat_session', sessionId);
+    }
+
+    let selectedFile = null;
+    let lastUploadedFile = null; // Ghi nhớ file qua nhiều lượt chat
+    let currentErrorCount = 0;  // Số lỗi trong analysis card hiện tại
+    let currentErrors = [];     // Lưu toàn bộ error objects để trích xuất feedback
+    let lastErrorListEl = null; // Tham chiếu đến error-list DOM mới nhất
+    let currentAnalysisFile = null; // Lưu file ảnh đang phân tích để dùng cho gợi ý style
+
+    function autoGrow(el) {
+      el.style.height = "5px";
+      el.style.height = (el.scrollHeight) + "px";
+    }
+
+    function previewFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      selectedFile = file;
+      const url = URL.createObjectURL(file);
+      document.getElementById("file-preview").src = url;
+      document.getElementById("file-preview-wrap").style.display = "flex";
+    }
+
+    function clearFile() {
+      selectedFile = null;
+      document.getElementById("file-input").value = "";
+      document.getElementById("file-preview-wrap").style.display = "none";
+    }
+
+    function checkEnter(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    function createBubble(role, htmlContent) {
+      const container = document.getElementById("chat-container");
+      const div = document.createElement("div");
+      div.className = `message ${role}`;
+      const avatar = role === 'user' ? '👤' : '🔍';
+      div.innerHTML = `
+      <div class="avatar">${avatar}</div>
+      <div class="content">${htmlContent}</div>
+    `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return div.querySelector('.content');
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("chat-input");
+      const text = input.value.trim();
+      if (!text && !selectedFile) return;
+
+      // -- Kiểm tra lệnh "sửa lỗi số N" --
+      const fixMatch = text.match(/s[uư][a-zử]\s+l[oô][iỗ]\s+s[oố]\s*(\d+)/iu)
+                    || text.match(/fix\s+l[oô][iỗ]\s+s[oố]\s*(\d+)/iu)
+                    || text.match(/s[uư][a-zử]\s+#?(\d+)/iu)
+                    || text.match(/fix\s+#?(\d+)/iu);
+      if (fixMatch && currentErrors.length > 0) {
+        const errIdx = parseInt(fixMatch[1]) - 1; // 1-based -> 0-based
+        if (errIdx >= 0 && errIdx < currentErrors.length) {
+          createBubble("user", text);
+          input.value = ""; autoGrow(input);
+          triggerFixForError(errIdx);
+          return;
+        }
+      }
+
+      // -- Kiểm tra "sửa tất cả" / "fix all" --
+      const fixAllMatch = /s[uư][a-zử]\s+t[aấ][tấ]\s+c[aả][a-z]|fix\s+all/iu.test(text);
+      if (fixAllMatch && currentErrors.length > 0) {
+        createBubble("user", text);
+        input.value = ""; autoGrow(input);
+        triggerFixForErrors(currentErrors.map((_, i) => i));
+        return;
+      }
+
+      // 1. Vẽ User Bubble
+      let userHtml = text;
+      if (selectedFile) {
+        const url = URL.createObjectURL(selectedFile);
+        userHtml += `<br><img class="chat-attachment" src="${url}" />`;
+      }
+      createBubble("user", userHtml);
+
+      // Chuẩn bị form
+      const formData = new FormData();
+      formData.append("session_id", sessionId);
+      formData.append("message", text);
+      if (selectedFile) {
+        lastUploadedFile = selectedFile;
+        formData.append("file", selectedFile);
+        
+        clearFile();
+        input.value = "";
+        autoGrow(input);
+
+        const aiContent = createBubble("ai", '<div class="loading-pulse">Đang kiểm tra yêu cầu...</div>');
+        callBackend(formData, aiContent, lastUploadedFile);
+      } else {
+        input.value = "";
+        autoGrow(input);
+        const aiContent = createBubble("ai", '<div class="loading-pulse">Đang xử lý...</div>');
+        callBackend(formData, aiContent, lastUploadedFile);
+      }
+    }
+
+    // ────────────────────────────────────────────────
+    // Fix Chat Panel Logic
+    // ────────────────────────────────────────────────
+
+    let fixPanelIndices = [];   // Indices đang được xử lý trong panel
+    let fixPanelPrompt = '';    // Prompt hiện tại
+    let fixPanelReady = false;  // true sau khi /prepare-regen hoàn tất
+
+    function openFixPanel(indices) {
+      fixPanelIndices = indices;
+      fixPanelReady = false;
+      // Highlight lỗi trong danh sách
+      if (lastErrorListEl) {
+        indices.forEach(i => {
+          const cb = lastErrorListEl.querySelector(`#err-check-${i}`);
+          if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+          const item = cb ? cb.closest('.error-item') : null;
+          if (item) {
+            item.classList.add('highlight-flash');
+            setTimeout(() => item.classList.remove('highlight-flash'), 750);
+          }
+        });
+      }
+      // Mở panel
+      document.getElementById('fix-panel').classList.add('open');
+      document.getElementById('fix-panel-overlay').classList.add('open');
+      // Reset chat
+      document.getElementById('fix-panel-chat').innerHTML = '';
+      // Cập nhật subtitle
+      const label = indices.length === 1
+        ? `Đang fix lỗi số ${indices[0]+1}`
+        : `Đang fix ${indices.length} lỗi được chọn`;
+      document.getElementById('fix-panel-subtitle').textContent = label;
+      // Bắt đầu gọi prepare-regen
+      loadFixPreview(indices);
+    }
+
+    function closeFixPanel() {
+      document.getElementById('fix-panel').classList.remove('open');
+      document.getElementById('fix-panel-overlay').classList.remove('open');
+    }
+
+    function appendFixMsg(role, htmlContent) {
+      const chat = document.getElementById('fix-panel-chat');
+      const div = document.createElement('div');
+      div.className = `fix-msg fix-${role}`;
+      const icon = role === 'user' ? '👤' : '🪄';
+      div.innerHTML = `
+        <div class="fix-avatar">${icon}</div>
+        <div class="fix-bubble">${htmlContent}</div>
+      `;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div.querySelector('.fix-bubble');
+    }
+
+    async function loadFixPreview(indices) {
+      const loadingBubble = appendFixMsg('ai',
+        `<span class="loading-pulse">⏳ Đang tạo mask preview và prompt gợi ý...</span>`);
+
+      try {
+        const fd = new FormData();
+        fd.append('session_id', sessionId);
+        fd.append('error_indices', JSON.stringify(indices));
+        const res = await fetch('/prepare-regen', { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        fixPanelPrompt = data.suggested_prompt || '';
+        fixPanelReady = true;
+
+        // Bubble 1: Mask preview
+        const errLabel = indices.length === 1
+          ? `lỗi số ${indices[0]+1}`
+          : `${indices.length} lỗi được chọn`;
+        loadingBubble.innerHTML = `🎨 Đây là vùng cần sửa (${errLabel}):` +
+          `<img class="fix-mask-img" src="${data.mask_preview_b64}" alt="Mask preview" />`;
+
+        // Bubble 2: Prompt gợi ý + actions
+        const promptBubble = appendFixMsg('ai', '');
+        promptBubble.innerHTML = `
+          <div style="margin-bottom:8px;color:#aaa;font-size:0.8rem;">💡 Prompt gợi ý từ AI (có thể chỉnh sửa):</div>
+          <div class="fix-prompt-box">
+            <textarea class="fix-prompt-textarea" id="fix-prompt-ta">${fixPanelPrompt}</textarea>
+          </div>
+          <div class="fix-action-row">
+            <button class="btn-fix-send" id="btn-fix-confirm" onclick="submitFixRegen()">
+              🚀 Gửi cho AI sửa ảnh
+            </button>
+          </div>
+        `;
+        // Auto-grow textarea
+        const ta = document.getElementById('fix-prompt-ta');
+        if (ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+
+      } catch (err) {
+        loadingBubble.innerHTML = `<span style="color:#e74c3c;">❌ Lỗi tải preview: ${err.message}</span>`;
+      }
+      document.getElementById('fix-panel-chat').scrollTop = 9999;
+    }
+
+    async function submitFixRegen() {
+      const ta = document.getElementById('fix-prompt-ta');
+      const finalPrompt = ta ? ta.value.trim() : fixPanelPrompt;
+      if (!finalPrompt) return;
+
+      // Khoá nút, hiện loading
+      const btn = document.getElementById('btn-fix-confirm');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Đang sửa...'; }
+
+      appendFixMsg('user', finalPrompt.replace(/\n/g, '<br>'));
+      const loadBubble = appendFixMsg('ai',
+        `<span class="loading-pulse"><span class="spinner"></span> Willa AI đang sửa ảnh... (30–90 giây)</span>`);
+
+      try {
+        const fd = new FormData();
+        fd.append('session_id', sessionId);
+        fd.append('error_indices', JSON.stringify(fixPanelIndices));
+        fd.append('final_prompt', finalPrompt);
+        const res = await fetch('/regen-image', { method: 'POST', body: fd });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || 'HTTP ' + res.status);
+        }
+        const data = await res.json();
+
+        // Hiển thị kết quả trong panel
+        const numFixed = fixPanelIndices.length;
+        loadBubble.innerHTML = `✅ ${data.reply || `Đã sửa ${numFixed} vùng lỗi!`}` +
+          `<img class="regen-result-img" src="${data.image_data_url}" alt="Ảnh đã sửa" style="border-color:#a855f7;" />`;
+
+        // Nút tải về
+        const dlBtn = document.createElement('a');
+        dlBtn.className = 'download-regen-btn';
+        dlBtn.href = data.image_data_url;
+        dlBtn.download = 'design_fixed_willa.png';
+        dlBtn.innerHTML = '⬇️ Tải ảnh về';
+        loadBubble.appendChild(dlBtn);
+
+        if (data.prompt_used) {
+          const note = document.createElement('div');
+          note.style.cssText = 'font-size:0.72rem;color:#555;margin-top:6px;font-style:italic;';
+          note.textContent = `Prompt: "${data.prompt_used.slice(0,100)}${data.prompt_used.length > 100 ? '...' : ''}"` ;
+          loadBubble.appendChild(note);
+        }
+
+        // Cũng hiện ảnh trong main chat
+        const mainBubble = createBubble('ai', `✅ ${data.reply || 'AI đã sửa xong!'}`);
+        const resultImg = document.createElement('img');
+        resultImg.className = 'regen-result-img';
+        resultImg.src = data.image_data_url;
+        mainBubble.appendChild(resultImg);
+
+      } catch (err) {
+        loadBubble.innerHTML = `<span style="color:#e74c3c;">❌ Lỗi: ${err.message}</span>`;
+        if (btn) { btn.disabled = false; btn.innerHTML = '🚀 Thử lại'; }
+      }
+      document.getElementById('fix-panel-chat').scrollTop = 9999;
+    }
+
+    // Input trong panel: nhận lệnh "sửa lỗi N"
+    function fixPanelAutoGrow(el) {
+      el.style.height = '5px';
+      el.style.height = el.scrollHeight + 'px';
+    }
+    function fixPanelCheckEnter(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFixPanelMessage(); }
+    }
+    function sendFixPanelMessage() {
+      const inp = document.getElementById('fix-panel-input');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = ''; fixPanelAutoGrow(inp);
+      // Nhận dạng "sửa lỗi N"
+      const m = text.match(/(\d+)/u);
+      if (m && currentErrors.length > 0) {
+        const idx = parseInt(m[1]) - 1;
+        if (idx >= 0 && idx < currentErrors.length) {
+          appendFixMsg('user', text);
+          openFixPanel([idx]);
+          return;
+        }
+      }
+      // Nhận dạng "sửa tất cả"
+      if (/t.+t c.+/iu.test(text) || /all/iu.test(text)) {
+        appendFixMsg('user', text);
+        openFixPanel(currentErrors.map((_,i) => i));
+        return;
+      }
+      // Nếu panel đã sẵn sàng, coi như user muốn gửi custom prompt
+      if (fixPanelReady) {
+        const ta = document.getElementById('fix-prompt-ta');
+        if (ta) ta.value = text;
+        appendFixMsg('user', text);
+        submitFixRegen();
+        return;
+      }
+      appendFixMsg('user', text);
+      appendFixMsg('ai', '💡 Gõ <b>sửa lỗi 1</b>, <b>sửa lỗi 2</b>... hoặc đợi preview tải xong để chỉnh prompt.');
+    }
+
+    // Trigger từ main chat (thay thế openRegenModal)
+    function triggerFixForError(idx) { openFixPanel([idx]); }
+    function triggerFixForErrors(indices) { openFixPanel(indices); }
+
+    async function callBackend(formData, contentDiv, uploadedFile) {
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          body: formData
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+
+        // Render dữ liệu trả về
+        contentDiv.innerHTML = data.reply.replace(/\n/g, "<br>");
+
+        // Nếu có Image (zoom hoặc generate)
+        if (data.image_data_url) {
+          let borderColor = data.type === "zoom" ? "#ff4d6d" : "#a855f7";
+          let borderStyle = data.type === "zoom" ? "dashed" : "solid";
+          contentDiv.innerHTML += `<br><img class="chat-attachment" style="border-color:${borderColor};border-width:2px;border-style:${borderStyle};" src="${data.image_data_url}" />`;
+        }
+
+        // Nếu có Analysis Data -> Vẽ DOM Canvas
+        let sourceImg = uploadedFile || data.image_data_url;
+        if (data.type === "analysis" && data.analysis_data && sourceImg) {
+          renderAnalysisCard(contentDiv, data.analysis_data, sourceImg);
+        }
+
+      } catch (err) {
+        contentDiv.innerHTML = `<span style="color:#e74c3c;">Lỗi hệ thống: ${err.message}</span>`;
+      }
+      document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
+    }
+
+    function renderAnalysisCard(parentDiv, analysisData, file) {
+      const errors = analysisData.e || [];
+      currentErrorCount = errors.length;
+      currentErrors = errors;  // Lưu lại để dùng cho chat command
+      currentAnalysisFile = file; // Lưu lại file (hoặc base64)
+
+
+      const card = document.createElement('div');
+      card.className = "analysis-card";
+
+      // Canvas
+      const canvas = document.createElement("canvas");
+      card.appendChild(canvas);
+
+      // Error list
+      const list = document.createElement('div');
+      list.className = "error-list";
+      if (errors.length === 0) {
+        list.innerHTML = `<div style="color:var(--accent);padding:10px;">✅ Không phát hiện lỗi thiết kế nào!</div>`;
+      } else {
+        const header = document.createElement('div');
+        header.innerHTML = `<div style="padding: 10px 12px 4px; font-weight: 600; color: #10a37f; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+          🪄 Luồng Ưu Tiên Sửa Lỗi (Quick-Fix Steps)
+        </div>`;
+        list.appendChild(header);
+
+        errors.forEach((err, i) => {
+          const item = document.createElement('div');
+          item.className = 'error-item';
+          
+          let highlightStyle = "";
+          let stepBgColor = "#555";
+          if (err.s === 'critical') {
+            highlightStyle = "border-left: 3px solid #e74c3c;";
+            stepBgColor = "#e74c3c";
+          } else if (err.s === 'major') {
+            highlightStyle = "border-left: 3px solid #e67e22;";
+            stepBgColor = "#e67e22";
+          }
+          
+          item.style.cssText = highlightStyle;
+
+          item.innerHTML = `
+            <input type="checkbox" class="error-check" id="err-check-${i}" data-index="${i}" />
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 6px;">
+              <span style="font-size: 0.65rem; color: #aaa; margin-bottom: 2px;">Bước</span>
+              <span style="background:${stepBgColor};color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;flex-shrink:0;">${i + 1}</span>
+            </div>
+            <div class="reason">
+              ${err.issue ? `<div style="margin-bottom: 4px;"><strong>Vấn đề:</strong> ${err.issue}</div>` : ''}
+              ${err.suggestion ? `<div style="color: #10a37f;"><strong>Hướng sửa:</strong> ${err.suggestion}</div>` : (!err.issue && !err.suggestion ? err.r : '')}
+            </div>
+            </div>
+            <span class="error-tag tag-${err.s}">${err.s}</span>
+            <div style="display:flex; flex-direction:column; gap:4px; margin-left: 8px;">
+              <button class="zoom-btn" onclick="requestZoom(${i})" title="Zoom vùng lỗi">🔍 Zoom</button>
+              <button class="zoom-btn" onclick="requestStyleSuggest(${i}, 'typo')" style="color:#a855f7;" title="Gợi ý Font chữ">A Font</button>
+              <button class="zoom-btn" onclick="requestStyleSuggest(${i}, 'color')" style="color:#3498db;" title="Gợi ý Bảng màu">🎨 Color</button>
+            </div>
+          `;
+          // Gắn event listener cho checkbox
+          const cb = item.querySelector('.error-check');
+          cb.addEventListener('change', function () {
+            if (this.checked) {
+              item.classList.add('checked');
+            } else {
+              item.classList.remove('checked');
+            }
+            // Cập nhật số lỗi được chọn trên nút Fix Selected
+            const parentList = item.closest('.error-list');
+            if (parentList) {
+              const fixBtn = parentList.querySelector('.fix-selected-btn');
+              if (fixBtn) {
+                const countChecked = parentList.querySelectorAll('.error-check:checked').length;
+                fixBtn.innerHTML = countChecked > 0
+                  ? `🪄 Fix Selected (${countChecked} lỗi)`
+                  : '🪄 Fix Selected';
+              }
+            }
+          });
+          list.appendChild(item);
+        });
+
+        // Fix Selected button → mở Fix Panel
+        const fixBtn = document.createElement('button');
+        fixBtn.className = 'fix-selected-btn';
+        fixBtn.innerHTML = '🪄 Fix Selected';
+        fixBtn.onclick = () => {
+          const checkedIndices = [];
+          list.querySelectorAll('.error-check').forEach(cb => {
+            if (cb.checked) checkedIndices.push(parseInt(cb.dataset.index));
+          });
+          if (checkedIndices.length === 0) {
+            // Nếu chưa tick, mở panel cho toàn bộ lỗi
+            openFixPanel(errors.map((_,i) => i));
+          } else {
+            openFixPanel(checkedIndices);
+          }
+        };
+        list.appendChild(fixBtn);
+      }
+      card.appendChild(list);
+      lastErrorListEl = list;  // Lưu tham chiếu list mới nhất
+      parentDiv.appendChild(card);
+
+      // Thêm suggestion chips vào bong bóng AI ngay dưới card
+      if (errors.length > 0) {
+        const chipsWrap = document.createElement('div');
+        chipsWrap.className = 'suggestion-chips';
+
+        // Chip từng lỗi
+        errors.forEach((err, i) => {
+          const chip = document.createElement('button');
+          chip.className = 'chip';
+          const rText = err.r || '';
+          const label = rText.length > 40 ? rText.slice(0, 40) + '…' : rText;
+          chip.innerHTML = `<span style="font-size:0.75rem;background:${err.s === 'critical' ? '#e74c3c' : (err.s === 'major' ? '#e67e22' : '#555')};color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${i+1}</span> Sửa Bước ${i+1}`;
+          chip.title = rText;
+          chip.onclick = () => {
+            document.getElementById('chat-input').value = `Sửa lỗi số ${i+1}`;
+            autoGrow(document.getElementById('chat-input'));
+            sendMessage();
+          };
+          chipsWrap.appendChild(chip);
+        });
+
+        // Chip fix all
+        if (errors.length > 1) {
+          const chipAll = document.createElement('button');
+          chipAll.className = 'chip';
+          chipAll.style.borderColor = 'rgba(168,85,247,0.5)';
+          chipAll.style.background = 'rgba(168,85,247,0.1)';
+          chipAll.style.color = '#a855f7';
+          chipAll.innerHTML = `✨ Sửa tất cả ${errors.length} lỗi`;
+          chipAll.onclick = () => {
+            document.getElementById('chat-input').value = `Sửa tất cả lỗi`;
+            autoGrow(document.getElementById('chat-input'));
+            sendMessage();
+          };
+          chipsWrap.appendChild(chipAll);
+        }
+
+        parentDiv.appendChild(chipsWrap);
+
+        // Cập nhật thanh gợi ý bên dưới input
+        updateInputSuggestions(errors);
+      }
+
+      // Vẽ box lên canvas
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      if (typeof file === 'string') {
+        img.src = file;
+      } else {
+        img.src = URL.createObjectURL(file);
+      }
+      img.onload = () => {
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+        const scaleX = canvas.width / (analysisData.isz?.w || canvas.width);
+        const scaleY = canvas.height / (analysisData.isz?.h || canvas.height);
+
+        errors.forEach((err, i) => {
+          const [rx1, ry1, rx2, ry2] = err.c || err.box_2d;
+          const x1 = rx1 * scaleX;
+          const y1 = ry1 * scaleY;
+          const x2 = rx2 * scaleX;
+          const y2 = ry2 * scaleY;
+          
+          let color = "#555";
+          if (err.s === 'critical') color = "#e74c3c";
+          else if (err.s === 'major') color = "#e67e22";
+          
+          ctx.strokeStyle = color;
+          ctx.lineWidth = Math.max(2, canvas.width / 400);
+          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+          // Vẽ số
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(x1 + 15, y1 + 15, 15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 16px Inter";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(i + 1, x1 + 15, y1 + 15);
+        });
+        // Scroll down sau khi vẽ xong
+        document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
+      };
+    }
+
+    // Cập nhật thanh gợi ý nhanh phía trên input
+    function updateInputSuggestions(errors) {
+      const bar = document.getElementById('input-suggestions');
+      bar.innerHTML = '';
+      errors.forEach((err, i) => {
+        const pill = document.createElement('button');
+        pill.className = 'input-suggestion-pill';
+        pill.textContent = `Sửa Bước ${i+1}`;
+        pill.title = err.r || '';
+        pill.onclick = () => {
+          document.getElementById('chat-input').value = `Sửa lỗi số ${i+1}`;
+          autoGrow(document.getElementById('chat-input'));
+          document.getElementById('chat-input').focus();
+          // Gửi ngay luôn
+          sendMessage();
+        };
+        bar.appendChild(pill);
+      });
+    }
+
+    function requestZoom(errorIndex) {
+      const aiContent = createBubble("ai", '<div class="loading-pulse">Đang cắt vùng ảnh...</div>');
+      const formData = new FormData();
+      formData.append("session_id", sessionId);
+      formData.append("action_type", "zoom");
+      formData.append("error_index", errorIndex);
+      callBackend(formData, aiContent, null);
+    }
+
+    async function requestStyleSuggest(errorIndex, suggestType) {
+      if (!currentAnalysisFile || !currentErrors[errorIndex]) return;
+      
+      const err = currentErrors[errorIndex];
+      const box2d = err.c || err.box_2d || [0,0,0,0];
+      
+      const typeLabel = suggestType === 'typo' ? 'Typography' : 'Color Palette';
+      const aiContent = createBubble("ai", `<div class="loading-pulse">Đang phân tích và gợi ý ${typeLabel} cho Bước ${errorIndex + 1}...</div>`);
+      
+      try {
+        const fd = new FormData();
+        fd.append("file", currentAnalysisFile);
+        fd.append("box_2d", JSON.stringify(box2d));
+        fd.append("suggest_type", suggestType);
+        
+        const res = await fetch("/api/suggest-style", {
+          method: "POST",
+          body: fd
+        });
+        
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "HTTP " + res.status);
+        }
+        const data = await res.json();
+        
+        let html = `<div style="font-weight:600; margin-bottom:10px; color:var(--accent);">✨ Gợi ý ${typeLabel} cho Bước ${errorIndex + 1}:</div>`;
+        
+        if (suggestType === 'typo' && data.fonts) {
+          html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+          data.fonts.forEach(f => {
+            html += `<div style="background:#2a2a2a; padding:12px; border-radius:8px; border:1px solid #3c3c3c;">
+              <div style="font-size:1.1rem; font-weight:600; font-family:'${f.name}', ${f.css_fallback || 'sans-serif'}; margin-bottom:4px;">
+                ${f.name}
+              </div>
+              <div style="font-size:0.85rem; color:#aaa; margin-bottom:8px;">${f.reason}</div>
+              <a href="${f.url}" target="_blank" style="color:#10a37f; font-size:0.8rem; text-decoration:none;">🔗 Xem trên Google Fonts</a>
+            </div>`;
+            // Tự động nhúng font để preview nếu chưa có
+            const fontId = 'font-' + f.name.replace(/\\s+/g, '-');
+            if (!document.getElementById(fontId)) {
+               const link = document.createElement('link');
+               link.id = fontId;
+               link.href = f.url;
+               link.rel = 'stylesheet';
+               document.head.appendChild(link);
+            }
+          });
+          html += `</div>`;
+        } else if (suggestType === 'color' && data.palette) {
+          html += `<div style="display:flex; flex-wrap:wrap; gap:12px;">`;
+          data.palette.forEach(c => {
+            html += `<div style="background:#2a2a2a; padding:10px; border-radius:8px; border:1px solid #3c3c3c; width:140px; text-align:center;">
+              <div style="width:100%; height:40px; background:${c.hex}; border-radius:4px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.1);"></div>
+              <div style="font-weight:bold; font-size:0.9rem;">${c.hex}</div>
+              <div style="font-size:0.75rem; color:#ccc; margin-top:4px;">${c.role}</div>
+              <div style="font-size:0.7rem; color:#888; margin-top:2px; line-height:1.2;">${c.reason}</div>
+            </div>`;
+          });
+          html += `</div>`;
+        } else {
+          html += `<div>Không có gợi ý nào được trả về.</div>`;
+        }
+        
+        aiContent.innerHTML = html;
+        
+      } catch (err) {
+        aiContent.innerHTML = `<span style="color:#e74c3c;">Lỗi: ${err.message}</span>`;
+      }
+      document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
+    }
+
+    // openRegenModal đã được thay bằng openFixPanel ở trên
+  </script>
+</body>
+
+</html>
