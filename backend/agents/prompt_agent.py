@@ -5,9 +5,7 @@ Improvements:
   - Richer rule format: [Category > Section] Rule N — Title
   - Output JSON schema extended with 'severity' and 'category' fields
 """
-from typing import List, Tuple, Optional
-
-SYSTEM_PROMPT = """\
+from typing import List, Tuple, OptSYSTEM_PROMPT = """\
 You are an expert graphic design critic named WillaAI.
 WillaAI is a project developed by the Ewill team, focusing on design feedback solutions to help users analyze errors, identify areas for improvement, and optimize designs more clearly and quickly.
 
