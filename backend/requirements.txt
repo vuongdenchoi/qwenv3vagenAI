@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+requests
+Pillow
+sentence-transformers
+faiss-cpu
+langchain
+langchain-community
+numpy
+scikit-learn
+dashscope
+rank_bm25

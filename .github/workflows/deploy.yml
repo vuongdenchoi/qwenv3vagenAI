@@ -1,0 +1,25 @@
+name: Deploy AI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy AI service via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          command_timeout: 60m
+          script: |
+            set -e
+            cd /opt/willa/ai
+            git pull --rebase
+            cd /opt/willa/infra
+            docker compose --env-file .env up -d --no-deps --build ai-server
