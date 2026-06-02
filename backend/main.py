@@ -54,7 +54,7 @@ requests.Session.request = _patched_request
 from agents.design_check_agent import DesignCheckAgent
 from agents.inpaint_agent import InpaintAgent
 from agents.style_suggest_agent import StyleSuggestAgent
-from memory_store import MemoryStore
+from memory_store import build_memory_store_from_env
 
 # Windows console encoding fix
 try:
@@ -79,7 +79,7 @@ app.mount("/temp-assets", StaticFiles(directory=str(TEMP_ASSETS_DIR)), name="tem
 
 _agent = None
 _inpaint_agent = None
-memory_store = MemoryStore()
+memory_store = build_memory_store_from_env()
 
 def get_agent():
     global _agent
@@ -132,6 +132,56 @@ def check_is_confirm(msg: str) -> bool:
             return True
             
     return False
+
+
+def looks_like_direct_image_edit_request(msg: str) -> bool:
+    """
+    Heuristic shortcut for concrete visual edit commands.
+    Used to avoid router ambiguity where edit requests are answered as plain chat.
+    """
+    t = (msg or "").strip().lower()
+    if not t:
+        return False
+    patterns = [
+        "đổi màu", "thay màu", "đổi chữ", "thay chữ", "sửa ảnh", "chỉnh ảnh",
+        "chuyển", "đổi ", "thay ", "replace ", "change ", "edit ",
+        "remove ", "xóa ", "thêm ", "add ", "make ", "turn ",
+        "thành ", "to #", "color #"
+    ]
+    # Need at least one action keyword + one target hint to reduce false positive.
+    target_hints = ["nhân vật", "character", "text", "chữ", "màu", "color", "logo", "superman", "luffy", "#"]
+    return any(p in t for p in patterns) and any(h in t for h in target_hints)
+
+
+def get_router_reply_lang() -> str:
+    """
+    Router reply language mode:
+    - en: always English
+    - vi: always Vietnamese
+    - auto: follow user's message language
+    """
+    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "vi") or "vi").strip().lower()
+    if lang in {"en", "vi", "auto"}:
+        return lang
+    return "vi"
+
+
+def router_language_instruction() -> str:
+    lang = get_router_reply_lang()
+    if lang == "en":
+        return (
+            "You MUST speak English in all chat responses. "
+            "All output strings and replies MUST be written entirely in English."
+        )
+    if lang == "vi":
+        return (
+            "Bạn PHẢI trả lời bằng tiếng Việt trong toàn bộ phản hồi chat. "
+            "Mọi chuỗi output và reply phải được viết hoàn toàn bằng tiếng Việt tự nhiên."
+        )
+    return (
+        "Use the same language as the user's latest message for all replies "
+        "(Vietnamese user message -> Vietnamese reply, English user message -> English reply)."
+    )
 
 def generate_or_edit_image(key: str, prompt: str, image_bytes: Optional[bytes] = None) -> dict:
     """
@@ -836,6 +886,29 @@ async def unified_chat(
                 "context critique", "rubic context"
             ]
             _msg_lower = msg.lower().strip()
+
+            # Shortcut: concrete edit command should execute image-to-image directly.
+            if looks_like_direct_image_edit_request(_msg_lower):
+                print("[Direct Edit Shortcut] Detected concrete image edit request.")
+                res = generate_or_edit_image(key, msg, image_bytes)
+                if res.get("success"):
+                    image_url = res.get("image_url")
+                    new_image_bytes = res.get("image_bytes")
+                    if new_image_bytes:
+                        memory_store.set_last_analysis(key, new_image_bytes, {"e": []})
+                    memory_store.set_antigraviti_state(key, phase=0, image=new_image_bytes or image_bytes)
+                    reply_with_img = "Done. I updated the image according to your instruction."
+                    memory_store.add_turn(key, "user", msg)
+                    memory_store.add_turn(key, "assistant", reply_with_img)
+                    return {
+                        "type": "chat",
+                        "reply": reply_with_img,
+                        "image_data_url": image_url
+                    }
+                reply_err = f"Image generation error: {res.get('error')}"
+                memory_store.add_turn(key, "user", msg)
+                memory_store.add_turn(key, "assistant", reply_err)
+                return {"type": "chat", "reply": reply_err}
             
             if any(kw in _msg_lower for kw in _context_keywords):
                 print("[Antigraviti] Kích hoạt phân tích bối cảnh Rubic theo yêu cầu.")
@@ -887,7 +960,7 @@ async def unified_chat(
                 "=== SYSTEM ROLES & INFORMATION ===\n"
                 "WillaAI is a project developed by the Ewill team, focusing on design feedback solutions to help users analyze errors, identify areas for improvement, and optimize designs more clearly and quickly.\n"
                 "If asked about yourself or your developer, you MUST use the exact phrase above.\n"
-                "You MUST speak English in all chat responses. All output strings and replies MUST be written entirely in English. Under no circumstances should any Vietnamese language be returned.\n\n"
+                f"{router_language_instruction()}\n\n"
                 "=== RELEVANT DESIGN RULES ===\n"
                 f"{rules_context if rules_context else 'No design rules fetched yet.'}\n\n"
                 "=== CURRENT SESSION STATE ===\n"

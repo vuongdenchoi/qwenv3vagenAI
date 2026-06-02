@@ -11,3 +11,4 @@ numpy
 scikit-learn
 dashscope
 rank_bm25
+redis
