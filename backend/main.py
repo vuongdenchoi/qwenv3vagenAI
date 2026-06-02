@@ -870,6 +870,9 @@ async def unified_chat(
             ]
             is_reanalyze_request = any(kw in _msg_lower for kw in _reanalyze_kw)
             
+            # Lấy RAG context cho câu chat của người dùng
+            rules_context = retrieve_design_rules_context(msg, top_k=3)
+
             # Chuẩn bị system prompt intent
             pending_gen_prompt = memory_store.get_pending_generation_prompt(key)
             errors_context_str = "Chưa có phân tích lỗi thiết kế nào."
@@ -885,6 +888,8 @@ async def unified_chat(
                 "WillaAI is a project developed by the Ewill team, focusing on design feedback solutions to help users analyze errors, identify areas for improvement, and optimize designs more clearly and quickly.\n"
                 "If asked about yourself or your developer, you MUST use the exact phrase above.\n"
                 "You MUST speak English in all chat responses. All output strings and replies MUST be written entirely in English. Under no circumstances should any Vietnamese language be returned.\n\n"
+                "=== RELEVANT DESIGN RULES ===\n"
+                f"{rules_context if rules_context else 'No design rules fetched yet.'}\n\n"
                 "=== CURRENT SESSION STATE ===\n"
                 f"- Current Phase: {phase} (Phase 2 means waiting for context confirmation/feedback/modification. Phase 0 means freeform chat/post-confirmation)\n"
                 f"- Design Context (Current design context): {json.dumps(context, ensure_ascii=False) if context else 'None'}\n"
@@ -1556,10 +1561,27 @@ async def unified_chat(
         else:
             # Không có ảnh trong phiên chat -> Chat thuần túy
             agent = get_agent()
+            
+            # Lấy lịch sử turns gần nhất để tăng tính nhất quán
+            turns = memory_store.get_recent_turns(key, limit=6)
+            history_messages = [{"role": r, "content": [{"text": t}]} for r, t in turns]
+            
+            # Truy vấn RAG cho câu hỏi của người dùng
+            rules_context = retrieve_design_rules_context(msg, top_k=4)
+            
+            system_prompt = (
+                "You are WillaAI, a senior graphic design assistant developed by the Ewill team.\n"
+                "You help users review and optimize their designs based on official design rules.\n"
+                "Analyze the user's question, refer to the provided project design rules, and answer in a highly professional, helpful manner.\n"
+                "If the user asks in Vietnamese, reply in Vietnamese. Use the design rules context to ground your advice.\n\n"
+            )
+            if rules_context:
+                system_prompt += f"{rules_context}\n"
+                
             reply, pay_usage = agent.qwen_agent.chat_text(
-                system_prompt="You are a helpful graphic design assistant named WillaAI.",
+                system_prompt=system_prompt,
                 user_text=msg,
-                history_messages=[]
+                history_messages=history_messages
             )
             memory_store.add_turn(key, "user", msg)
             memory_store.add_turn(key, "assistant", reply)
@@ -1637,6 +1659,30 @@ def translate_vi_to_en(text: str) -> str:
     except Exception as e:
         print(f"Error during translation: {e}")
         return text
+
+
+def retrieve_design_rules_context(query: str, top_k: int = 3) -> str:
+    """
+    Tìm kiếm các quy tắc thiết kế liên quan từ cơ sở tri thức (RAG)
+    và định dạng thành chuỗi văn bản ngữ cảnh để nhúng vào prompt của AI.
+    """
+    try:
+        agent = get_agent()
+        rules = agent.retriever.retrieve(query.lower())
+        if not rules:
+            return ""
+        
+        context_str = "\n=== RELEVANT DESIGN RULES FROM KNOWLEDGE BASE ===\n"
+        for idx, r in enumerate(rules[:top_k]):
+            title = r.get("rule_title", "Quy tắc")
+            cat = r.get("category", "Chung")
+            text = r.get("text", "")
+            context_str += f"[{idx+1}] {title} (Category: {cat}):\n{text}\n\n"
+        context_str += "=================================================\n"
+        return context_str
+    except Exception as e:
+        print(f"Error retrieving rules context: {e}")
+        return ""
 
 
 # -------------------------------------------------------------------
@@ -1936,15 +1982,33 @@ async def chat_generate(req: ChatGenerateRequest):
     if not messages:
         raise HTTPException(status_code=400, detail="No messages provided.")
     
+    # Lấy tin nhắn cuối cùng của user để truy vấn RAG
+    user_msg = ""
+    for m in reversed(messages):
+        if m.get("role") == "user":
+            user_msg = m.get("content", "")
+            break
+            
+    rules_context = ""
+    if user_msg:
+        rules_context = retrieve_design_rules_context(user_msg, top_k=3)
+        
     # Prepend system prompt to guide Grok
+    system_prompt_text = (
+        "You are Grok Image Assistant. You can chat normally with the user. "
+        "However, if the user asks you to generate, draw, or create an image, you MUST respond EXACTLY in the following format and nothing else:\n"
+        "[GENERATE_IMAGE] <detailed_english_prompt_for_image_generation>\n"
+        "Example: [GENERATE_IMAGE] A highly detailed cyberpunk city at night with neon lights and flying cars, 8k resolution, photorealistic.\n\n"
+    )
+    if rules_context:
+        system_prompt_text += (
+            "Refer to the following project design rules to ground your graphic design advice and answers:\n"
+            f"{rules_context}\n"
+        )
+        
     system_prompt = {
         "role": "system", 
-        "content": (
-            "You are Grok Image Assistant. You can chat normally with the user. "
-            "However, if the user asks you to generate, draw, or create an image, you MUST respond EXACTLY in the following format and nothing else:\n"
-            "[GENERATE_IMAGE] <detailed_english_prompt_for_image_generation>\n"
-            "Example: [GENERATE_IMAGE] A highly detailed cyberpunk city at night with neon lights and flying cars, 8k resolution, photorealistic."
-        )
+        "content": system_prompt_text
     }
     
     grok_messages = [system_prompt] + messages
