@@ -348,24 +348,44 @@ class InpaintAgent:
         Tao anh preview: overlay do ban trong len vung loi.
         Tra ve bytes PNG.
         """
-        from box_coordinates import scale_pixel_box_to_image, resolve_best_box_pixel
+        from box_coordinates import (
+            COORD_FRAME_PIXEL,
+            grid_to_pixel_xyxy,
+            resolve_best_box_pixel,
+            scale_pixel_box_to_image,
+            scale_pixel_to_source,
+        )
 
         img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
         W, H = img.size
-        isz = (analysis_result or {}).get("isz") or {}
+        meta = analysis_result or {}
+        isz = meta.get("isz") or {}
         ref_w = int(isz.get("w") or W)
         ref_h = int(isz.get("h") or H)
+        coord_space = meta.get("coord_space") or COORD_FRAME_PIXEL
         overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
 
         selected = [errors[i] for i in error_indices if 0 <= i < len(errors)]
         for err in selected:
-            combined = f"{err.get('issue') or ''} {err.get('suggestion') or ''} {err.get('r') or ''}"
-            pixel = resolve_best_box_pixel(err, combined, W, H)
+            pixel = None
+            raw = err.get("c") or err.get("box_2d")
+            # Post-process: e[].c = pixel trên isz (frame_pixel) — không parse lại như grid 0–1000
+            if isinstance(raw, list) and len(raw) == 4:
+                pixel = scale_pixel_box_to_image(raw, ref_w, ref_h, W, H)
+            if pixel is None and coord_space != COORD_FRAME_PIXEL:
+                g = err.get("c_grid")
+                if isinstance(g, list) and len(g) == 4:
+                    pixel = grid_to_pixel_xyxy(g, ref_w, ref_h, pad_px=0)
+                    if pixel and (ref_w != W or ref_h != H):
+                        pixel = scale_pixel_to_source(pixel, ref_w, ref_h, W, H)
             if pixel is None:
-                raw = err.get("c") or err.get("box_2d")
-                if isinstance(raw, list) and len(raw) == 4:
-                    pixel = scale_pixel_box_to_image(raw, ref_w, ref_h, W, H)
+                combined = (
+                    f"{err.get('issue') or ''} {err.get('suggestion') or ''} {err.get('r') or ''}"
+                )
+                pixel = resolve_best_box_pixel(err, combined, ref_w, ref_h)
+                if pixel and (ref_w != W or ref_h != H):
+                    pixel = scale_pixel_to_source(pixel, ref_w, ref_h, W, H)
             if not pixel:
                 continue
             x1, y1, x2, y2 = pixel
