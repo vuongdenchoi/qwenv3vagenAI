@@ -55,6 +55,13 @@ from agents.design_check_agent import DesignCheckAgent
 from agents.inpaint_agent import InpaintAgent
 from agents.style_suggest_agent import StyleSuggestAgent
 from memory_store import build_memory_store_from_env
+from reply_lang import (
+    _t,
+    format_initial_analysis_reply,
+    format_post_context_analysis_reply,
+    resolve_reply_lang,
+    router_language_instruction,
+)
 
 # Windows console encoding fix
 try:
@@ -154,34 +161,11 @@ def looks_like_direct_image_edit_request(msg: str) -> bool:
 
 
 def get_router_reply_lang() -> str:
-    """
-    Router reply language mode:
-    - en: always English
-    - vi: always Vietnamese
-    - auto: follow user's message language
-    """
-    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "vi") or "vi").strip().lower()
-    if lang in {"en", "vi", "auto"}:
-        return lang
-    return "vi"
+    """Legacy env default — prefer resolve_reply_lang() per session."""
+    from reply_lang import env_default_reply_lang
+    d = env_default_reply_lang()
+    return d if d in {"vi", "en"} else "vi"
 
-
-def router_language_instruction() -> str:
-    lang = get_router_reply_lang()
-    if lang == "en":
-        return (
-            "You MUST speak English in all chat responses. "
-            "All output strings and replies MUST be written entirely in English."
-        )
-    if lang == "vi":
-        return (
-            "Bạn PHẢI trả lời bằng tiếng Việt trong toàn bộ phản hồi chat. "
-            "Mọi chuỗi output và reply phải được viết hoàn toàn bằng tiếng Việt tự nhiên."
-        )
-    return (
-        "Use the same language as the user's latest message for all replies "
-        "(Vietnamese user message -> Vietnamese reply, English user message -> English reply)."
-    )
 
 def generate_or_edit_image(key: str, prompt: str, image_bytes: Optional[bytes] = None) -> dict:
     """
@@ -636,7 +620,9 @@ async def unified_chat(
     action_type: Optional[str] = Form(""), # e.g. "zoom"
     error_index: Optional[int] = Form(None),
     box_2d: Optional[str] = Form("[]"),
-    persona_context: Optional[str] = Form(None)
+    persona_context: Optional[str] = Form(None),
+    reply_lang: Optional[str] = Form(None),
+    replyLang: Optional[str] = Form(None),
 ):
     """
     Cổng API hợp nhất (Unified endpoint) thay thế cho /analyze, /chat và /zoom.
@@ -645,6 +631,9 @@ async def unified_chat(
     key = session_id.strip() if session_id else "anonymous"
     msg = message.strip() if message else ""
     action = action_type.strip().lower() if action_type else ""
+    effective_reply_lang = reply_lang or replyLang
+    lang = resolve_reply_lang(key, effective_reply_lang, memory_store)
+    print(f"[reply_lang] session={key} lang={lang} request={effective_reply_lang!r}")
 
     persona_dict = parse_persona(persona_context)
     if persona_dict:
@@ -742,7 +731,7 @@ async def unified_chat(
             
             return {
                 "type": "zoom",
-                "reply": "Here is the detailed error region:",
+                "reply": _t(lang, "Đây là vùng lỗi chi tiết:", "Here is the detailed error region:"),
                 "image_data_url": b64
             }
 
@@ -781,7 +770,8 @@ async def unified_chat(
                     filename="image.jpg",
                     query=query_str,
                     confirmed_context=None,
-                    persona_context=persona_dict
+                    persona_context=persona_dict,
+                    reply_lang=lang,
                 )
                 if "e" in result and isinstance(result["e"], list):
                     severity_weight = {"critical": 3, "major": 2, "minor": 1}
@@ -814,33 +804,7 @@ async def unified_chat(
                 except Exception:
                     pass
 
-                # Hiển thị feedback đầy đủ
-                compliments = result.get("compliments", [])
-                compliments_text = ""
-                if compliments:
-                    compliments_text = "✨ Design Highlights:\n"
-                    for c in compliments:
-                        compliments_text += f"💚 {c}\n"
-                    compliments_text += "\n"
-
-                error_count = result.get("te", 0)
-                error_list_text = ""
-                if error_count > 0:
-                    error_list_text = "⚠️ Key Issues to Address:\n"
-                    for err in result.get("e", [])[:3]:
-                        issue = err.get("issue") or err.get("r", "")
-                        issue = (issue[:100] + "...") if len(issue) > 100 else issue
-                        error_list_text += f"- {issue}\n"
-                    error_list_text += "\n"
-                
-                final_reply = (
-                    f"Welcome to Willa AI! 🚀\n\n"
-                    f"{compliments_text}"
-                    f"💡 I detected **{error_count}** visual critique issues that can be improved.\n"
-                    f"{error_list_text}"
-                    "You can view highlighted error bounding boxes directly on the image.\n\n"
-                    "👉 If you want to analyze contextual suitability across **8 dimensions of Rubic**, ask me by using keywords like: **\"context\"** or **\"Rubic\"**!"
-                )
+                final_reply = format_initial_analysis_reply(result, lang)
                 memory_store.add_turn(key, "assistant", final_reply)
                 return {
                     "type": "analysis",
@@ -865,7 +829,11 @@ async def unified_chat(
         if image_bytes:
             if not msg:
                 # Có ảnh nhưng chưa có tin nhắn
-                reply = "Please share details about your design context, or type 'I don't know' to proceed."
+                reply = _t(
+                    lang,
+                    "Vui lòng chia sẻ bối cảnh thiết kế, hoặc gõ 'không biết' để tiếp tục.",
+                    "Please share details about your design context, or type 'I don't know' to proceed.",
+                )
                 memory_store.add_turn(key, "assistant", reply)
                 return {"type": "chat", "reply": reply}
             
@@ -897,7 +865,7 @@ async def unified_chat(
                     if new_image_bytes:
                         memory_store.set_last_analysis(key, new_image_bytes, {"e": []})
                     memory_store.set_antigraviti_state(key, phase=0, image=new_image_bytes or image_bytes)
-                    reply_with_img = "Done. I updated the image according to your instruction."
+                    reply_with_img = _t(lang, "Xong. Tôi đã cập nhật ảnh theo yêu cầu của bạn.", "Done. I updated the image according to your instruction.")
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply_with_img)
                     return {
@@ -905,7 +873,7 @@ async def unified_chat(
                         "reply": reply_with_img,
                         "image_data_url": image_url
                     }
-                reply_err = f"Image generation error: {res.get('error')}"
+                reply_err = _t(lang, f"Lỗi sinh ảnh: {res.get('error')}", f"Image generation error: {res.get('error')}")
                 memory_store.add_turn(key, "user", msg)
                 memory_store.add_turn(key, "assistant", reply_err)
                 return {"type": "chat", "reply": reply_err}
@@ -916,11 +884,16 @@ async def unified_chat(
                 # Thiết lập phase = 10 để lượt tiếp theo xử lý thu thập bối cảnh
                 memory_store.set_antigraviti_state(key, phase=10, image=image_bytes)
                 
-                reply = (
+                reply = _t(
+                    lang,
+                    "Tuyệt! Hãy phân tích mức độ phù hợp của thiết kế theo **8 chiều bối cảnh Rubic**! 🎯\n\n"
+                    "Bạn có thể chia sẻ bối cảnh thiết kế?\n"
+                    "*(Ví dụ: thời gian, địa điểm, văn hóa, phong cách nghệ thuật, phân khúc kinh tế, chất liệu in/điện tử...)*\n\n"
+                    "→ Hoặc trả lời **\"AI tự phát hiện\"** để tôi tự phân tích bối cảnh từ ảnh!",
                     "Awesome! Let's analyze the suitability of this design using **8 dimensions of Rubic** context! 🎯\n\n"
                     "Could you share some details about your design context?\n"
                     "*(For example: time period, location, cultural context, art style, economic segment, print or digital medium...)*\n\n"
-                    "→ Or reply **\"AI tự phát hiện\"** (or **\"AI detect\"**) to let me automatically analyze the context from your image!"
+                    "→ Or reply **\"AI detect\"** to let me automatically analyze the context from your image!",
                 )
                 memory_store.add_turn(key, "assistant", reply)
                 return {
@@ -960,7 +933,7 @@ async def unified_chat(
                 "=== SYSTEM ROLES & INFORMATION ===\n"
                 "WillaAI is a project developed by the Ewill team, focusing on design feedback solutions to help users analyze errors, identify areas for improvement, and optimize designs more clearly and quickly.\n"
                 "If asked about yourself or your developer, you MUST use the exact phrase above.\n"
-                f"{router_language_instruction()}\n\n"
+                f"{router_language_instruction(lang)}\n\n"
                 "=== RELEVANT DESIGN RULES ===\n"
                 f"{rules_context if rules_context else 'No design rules fetched yet.'}\n\n"
                 "=== CURRENT SESSION STATE ===\n"
@@ -1008,7 +981,7 @@ async def unified_chat(
                 '    "error_index": null,\n'
                 '    "description": null\n'
                 '  },\n'
-                '  "reply": "English response for normal chat, or a confirmation request/clarification for actions."\n'
+                f'  "reply": "{_t(lang, "Phản hồi tiếng Việt cho chat thường hoặc xác nhận/làm rõ hành động.", "English response for normal chat, or a confirmation request/clarification for actions.")}"\n'
                 "}"
             )
 
@@ -1048,7 +1021,12 @@ async def unified_chat(
                     # Reset phase về 0 vì đã hoàn thành yêu cầu vẽ/sửa ảnh mới
                     memory_store.set_antigraviti_state(key, phase=0, image=new_image_bytes or image_bytes)
                     
-                    reply_with_img = reply if (reply and reply != "normal chat" and "generate_image" not in reply.lower()) else f"Mình đã vẽ/sửa xong bức ảnh theo yêu cầu của bạn dựa trên mô tả:\n*{gen_prompt}*"
+                    default_gen_reply = _t(
+                        lang,
+                        f"Mình đã vẽ/sửa xong bức ảnh theo yêu cầu của bạn dựa trên mô tả:\n*{gen_prompt}*",
+                        f"I have finished editing/generating the image based on your request:\n*{gen_prompt}*",
+                    )
+                    reply_with_img = reply if (reply and reply != "normal chat" and "generate_image" not in reply.lower()) else default_gen_reply
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply_with_img)
                     return {
@@ -1062,7 +1040,7 @@ async def unified_chat(
                         }
                     }
                 else:
-                    reply_err = f"Đã có lỗi khi tạo/sửa ảnh: {res.get('error')}"
+                    reply_err = _t(lang, f"Đã có lỗi khi tạo/sửa ảnh: {res.get('error')}", f"Image edit/generation error: {res.get('error')}")
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply_err)
                     return {"type": "chat", "reply": reply_err}
@@ -1132,7 +1110,7 @@ async def unified_chat(
                     b64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
                     
                     if not reply or reply == "normal chat":
-                        reply = "Here is the detailed design area you requested to zoom in on:"
+                        reply = _t(lang, "Đây là vùng thiết kế chi tiết bạn yêu cầu zoom:", "Here is the detailed design area you requested to zoom in on:")
                         
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply)
@@ -1147,7 +1125,11 @@ async def unified_chat(
                         }
                     }
                 else:
-                    reply = "Sorry, I couldn't identify the area you want to zoom in on. Could you please describe it more clearly?"
+                    reply = _t(
+                        lang,
+                        "Xin lỗi, tôi không xác định được vùng bạn muốn zoom. Bạn mô tả rõ hơn được không?",
+                        "Sorry, I couldn't identify the area you want to zoom in on. Could you please describe it more clearly?",
+                    )
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply)
                     return {"type": "chat", "reply": reply}
@@ -1233,8 +1215,12 @@ async def unified_chat(
                 report_text = format_antigraviti_report(_display_analysis)
 
                 reply = (
-                    "Here is the design context I captured and cross-referenced with the RAG knowledge base! 🔍\n\n"
-                    f"{report_text}"
+                    _t(
+                        lang,
+                        "Đây là bối cảnh thiết kế tôi thu thập và đối chiếu với cơ sở tri thức RAG! 🔍\n\n",
+                        "Here is the design context I captured and cross-referenced with the RAG knowledge base! 🔍\n\n",
+                    )
+                    + f"{report_text}"
                 )
 
                 memory_store.add_turn(key, "assistant", reply)
@@ -1273,7 +1259,8 @@ async def unified_chat(
                         filename="image.jpg",
                         query=query_str,
                         confirmed_context=ag_context,
-                        persona_context=persona_dict
+                        persona_context=persona_dict,
+                        reply_lang=lang,
                     )
                     
                     if "e" in result and isinstance(result["e"], list):
@@ -1291,21 +1278,7 @@ async def unified_chat(
                     # Reset phase về 0 sau khi hoàn thành
                     memory_store.set_antigraviti_state(key, phase=0, image=ag_image, context=ag_context)
                     
-                    error_count = result.get("te", 0)
-                    compliments = result.get("compliments", [])
-                    compliments_text = ""
-                    if compliments:
-                        compliments_text = "✨ Design Highlights:\n"
-                        for c in compliments:
-                            compliments_text += f"💚 {c}\n"
-                        compliments_text += "\n"
-                        
-                    agree_reply = (
-                        f"✅ Design context confirmed successfully!\n\n"
-                        f"{compliments_text}"
-                        f"I have conducted a deep critique and detected **{error_count}** visual design issues based on your new context.\n"
-                        "You can view highlighted bounding boxes on the image, or chat further to zoom/edit."
-                    )
+                    agree_reply = format_post_context_analysis_reply(result, lang, deep=True)
                     
                     memory_store.add_turn(key, "assistant", agree_reply)
                     
@@ -1362,8 +1335,8 @@ async def unified_chat(
                     report_text = format_antigraviti_report(_display_analysis)
                     
                     reply = (
-                        "I have adjusted the context according to your request! 🛠️\n\n"
-                        f"{report_text}"
+                        _t(lang, "Tôi đã điều chỉnh bối cảnh theo yêu cầu của bạn! 🛠️\n\n", "I have adjusted the context according to your request! 🛠️\n\n")
+                        + f"{report_text}"
                     )
                     memory_store.add_turn(key, "assistant", reply)
                     return {
@@ -1386,7 +1359,11 @@ async def unified_chat(
                         if new_image_bytes:
                             memory_store.set_last_analysis(key, new_image_bytes, {"e": []})
                         
-                        reply_with_img = reply if reply else "I have generated a sample image based on your context."
+                        reply_with_img = reply if reply else _t(
+                            lang,
+                            "Tôi đã tạo ảnh mẫu theo bối cảnh của bạn.",
+                            "I have generated a sample image based on your context.",
+                        )
                         memory_store.add_turn(key, "user", msg)
                         memory_store.add_turn(key, "assistant", reply_with_img)
                         return {
@@ -1400,7 +1377,7 @@ async def unified_chat(
                             }
                         }
                     else:
-                        reply_err = f"Image generation error: {res.get('error')}"
+                        reply_err = _t(lang, f"Lỗi sinh ảnh: {res.get('error')}", f"Image generation error: {res.get('error')}")
                         memory_store.add_turn(key, "user", msg)
                         memory_store.add_turn(key, "assistant", reply_err)
                         return {"type": "chat", "reply": reply_err}
@@ -1425,7 +1402,8 @@ async def unified_chat(
                             filename="image.jpg",
                             query=query_str,
                             confirmed_context=ag_context,
-                            persona_context=persona_dict
+                            persona_context=persona_dict,
+                            reply_lang=lang,
                         )
                         
                         if "e" in result and isinstance(result["e"], list):
@@ -1442,22 +1420,7 @@ async def unified_chat(
                         memory_store.set_last_analysis(key, ag_image, result)
                         memory_store.clear_antigraviti_state(key)
                         
-                        error_count = result.get("te", 0)
-                        compliments = result.get("compliments", [])
-                        compliments_text = ""
-                        if compliments:
-                            compliments_text = "✨ Design Highlights:\n"
-                            for c in compliments:
-                                compliments_text += f"💚 {c}\n"
-                            compliments_text += "\n"
-                            
-                        agree_reply = (
-                            f"✅ Context confirmed!\n\n"
-                            f"{compliments_text}"
-                            f"I have re-analyzed and found **{error_count}** visual design error(s) based on the new context.\n"
-                            "You can see the highlighted errors on the image, or continue chatting to fix them (e.g., 'fix error #1', 'fix all errors')."
-                        )
-                        reply = agree_reply
+                        reply = format_post_context_analysis_reply(result, lang)
                         memory_store.add_turn(key, "user", msg)
                         memory_store.add_turn(key, "assistant", reply)
                         
@@ -1477,22 +1440,7 @@ async def unified_chat(
                         memory_store.clear_antigraviti_state(key)
                         if stored:
                             stored_bytes, stored_result = stored
-                            error_count = stored_result.get("te", 0)
-                            compliments = stored_result.get("compliments", [])
-                            compliments_text = ""
-                            if compliments:
-                                compliments_text = "✨ Design Highlights:\n"
-                                for c in compliments:
-                                    compliments_text += f"💚 {c}\n"
-                                compliments_text += "\n"
-                                
-                            agree_reply = (
-                                f"✅ Context confirmed!\n\n"
-                                f"{compliments_text}"
-                                f"I have analyzed and found **{error_count}** visual design error(s).\n"
-                                "You can see the highlighted errors on the image, or continue chatting to fix them (e.g., 'fix error #1', 'fix all errors')."
-                            )
-                            reply = agree_reply
+                            reply = format_post_context_analysis_reply(stored_result, lang, stored_only=True)
                             memory_store.add_turn(key, "user", msg)
                             memory_store.add_turn(key, "assistant", reply)
                             
@@ -1508,7 +1456,11 @@ async def unified_chat(
                                 "image_data_url": image_data_url
                             }
                         else:
-                            reply = "Excellent! Context has been confirmed. You can continue chatting to fix any design errors!"
+                            reply = _t(
+                                lang,
+                                "Tuyệt vời! Bối cảnh đã được xác nhận. Bạn có thể tiếp tục chat để sửa các lỗi thiết kế!",
+                                "Excellent! Context has been confirmed. You can continue chatting to fix any design errors!",
+                            )
                             memory_store.add_turn(key, "user", msg)
                             memory_store.add_turn(key, "assistant", reply)
                             return {"type": "chat", "reply": reply}
@@ -1544,9 +1496,14 @@ async def unified_chat(
                         
                         report_text = format_antigraviti_report(analysis_result)
                         reply = (
-                            "I have successfully updated the design context! 🛠️\n"
-                            "Here is the adjusted context:\n\n"
-                            f"{report_text}"
+                            _t(
+                                lang,
+                                "Tôi đã cập nhật bối cảnh thiết kế thành công! 🛠️\n"
+                                "Đây là bối cảnh đã điều chỉnh:\n\n",
+                                "I have successfully updated the design context! 🛠️\n"
+                                "Here is the adjusted context:\n\n",
+                            )
+                            + f"{report_text}"
                         )
                         memory_store.add_turn(key, "user", msg)
                         memory_store.add_turn(key, "assistant", reply)
@@ -1596,8 +1553,12 @@ async def unified_chat(
 
                     report_text = format_antigraviti_report(reanalyzed_result)
                     reanalyze_reply = (
-                        "I have automatically scanned the entire design context from the image! 🔍\n\n"
-                        f"{report_text}"
+                        _t(
+                            lang,
+                            "Tôi đã tự động quét toàn bộ bối cảnh thiết kế từ ảnh! 🔍\n\n",
+                            "I have automatically scanned the entire design context from the image! 🔍\n\n",
+                        )
+                        + f"{report_text}"
                     )
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reanalyze_reply)
@@ -1606,10 +1567,14 @@ async def unified_chat(
                 # 4. Ý định REQUEST_FEEDBACK
                 elif intent == "REQUEST_FEEDBACK":
                     print("User requested re-critique. Transitioning to context gathering flow...")
-                    reply = (
+                    reply = _t(
+                        lang,
+                        "Để đưa ra phản hồi thiết kế chính xác nhất, vui lòng chia sẻ bối cảnh mong muốn "
+                        "(vd: thời gian, địa điểm, văn hóa, phong cách nghệ thuật...).\n"
+                        "Sau khi có bối cảnh, tôi sẽ đối chiếu với cơ sở tri thức và phân tích chi tiết!",
                         "To provide the most accurate and suitable design feedback, "
                         "please share the desired context for this artwork (e.g., time period, location, culture, art style, etc.).\n"
-                        "Once you provide the context, I will compare it against the knowledge base and give you a fresh, detailed critique!"
+                        "Once you provide the context, I will compare it against the knowledge base and give you a fresh, detailed critique!",
                     )
                     memory_store.set_antigraviti_state(key, phase=10, image=image_bytes)
                     memory_store.add_turn(key, "user", msg)
@@ -1619,7 +1584,11 @@ async def unified_chat(
                 # 7. Ý định CHAT thuần túy
                 else:
                     if not reply or reply == "normal chat":
-                        reply = "Is there anything else I can help you with regarding your design?"
+                        reply = _t(
+                            lang,
+                            "Bạn cần tôi hỗ trợ thêm gì về thiết kế không?",
+                            "Is there anything else I can help you with regarding your design?",
+                        )
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply)
                     return {
@@ -1646,7 +1615,8 @@ async def unified_chat(
                 "You are WillaAI, a senior graphic design assistant developed by the Ewill team.\n"
                 "You help users review and optimize their designs based on official design rules.\n"
                 "Analyze the user's question, refer to the provided project design rules, and answer in a highly professional, helpful manner.\n"
-                "If the user asks in Vietnamese, reply in Vietnamese. Use the design rules context to ground your advice.\n\n"
+                f"{router_language_instruction(lang)}\n"
+                "Use the design rules context to ground your advice.\n\n"
             )
             if rules_context:
                 system_prompt += f"{rules_context}\n"

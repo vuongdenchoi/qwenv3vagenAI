@@ -35,6 +35,7 @@ class DesignCheckAgent:
         history_messages=None,
         confirmed_context=None,
         persona_context=None,
+        reply_lang: str = "vi",
     ):
         """Main entry point. Returns validated result dict."""
         # Step 1: Retrieval (with category boost)
@@ -61,7 +62,8 @@ class DesignCheckAgent:
         system_prompt, instruction = self.prompt_agent.build_prompt(
             rules,
             confirmed_context=confirmed_context,
-            persona_context=persona_context
+            persona_context=persona_context,
+            reply_lang=reply_lang,
         )
 
         persona_extra = ""
