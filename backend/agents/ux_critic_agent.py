@@ -154,11 +154,60 @@ class UXCriticAgent:
                 '  "compliments": [\n'
                 '     "Màu sắc nổi bật, mang đậm phong cách anime đặc trưng.",\n'
                 '     "Bố cục tổng thể phân bổ hợp lý, hướng mắt người xem tốt.",\n'
-                '     "Hình ảnh nhân vật được xử lý sắc nét, thu hút."\n'
+                '     "Hiệu ứng ánh sáng được sử dụng khá ấn tượng và sáng tạo."\n'
                 '  ],\n'
-                '  "export_markdown": "# Báo cáo Đánh giá UX\\n... "\n'
-                "}\n"
+                '  "export_markdown": "..."\n'
+                "}"
             )
+        else:
+            system_prompt += (
+                "\nLanguage Requirement: ALL string values MUST be written entirely in natural, professional English. Do not use Vietnamese.\n\n"
+                "=== FEW-SHOT EXAMPLE ===\n"
+                "{\n"
+                '  "critique_summary": "The poster design features a strong color palette and composition suitable for the Genshin Impact theme. However, it suffers from poor text contrast and cluttered secondary elements...",\n'
+                '  "critique_details": [\n'
+                '     {\n'
+                '       "box_2d": [69, 54, 209, 69],\n'
+                '       "issue": "The \'GENSHIN IMPACT\' text has an extremely low contrast ratio (1.02:1), failing WCAG standards.",\n'
+                '       "guideline_violation": "[Color Theory > Color Contrast] — Contrast Ratio Standard",\n'
+                '       "ux_explanation": "Faint text on a dark blue background reduces brand recognition from a distance.",\n'
+                '       "suggestion": "Change the text to white or bright yellow to significantly increase contrast."\n'
+                '     },\n'
+                '     {\n'
+                '       "box_2d": [20, 85, 970, 690],\n'
+                '       "issue": "Large white Chinese characters overlap the main character\'s head and body, causing severe figure-ground confusion.",\n'
+                '       "guideline_violation": "[Poster Design > Composition and Spatial Structure] — Figure-ground must be clear at a glance",\n'
+                '       "ux_explanation": "Large white text over the cosplayer blurs the primary focal point of the artwork.",\n'
+                '       "suggestion": "Reduce the opacity of this text to 15-20% or move the text behind the main character."\n'
+                '     }\n'
+                '  ],\n'
+                '  "validated_errors": [\n'
+                '     {\n'
+                '       "c": [69, 54, 209, 69],\n'
+                '       "r": "The \'GENSHIN IMPACT\' text contrast is too low (1.02:1), failing the 4.5:1 WCAG minimum. Change text color to white or bright yellow, or add a dark background layer to increase contrast.",\n'
+                '       "issue": "The \'GENSHIN IMPACT\' text has an extremely low contrast ratio (1.02:1)",\n'
+                '       "suggestion": "Change the text to white or bright yellow to significantly increase contrast.",\n'
+                '       "s": "critical",\n'
+                '       "g": "color_theory"\n'
+                '     },\n'
+                '     {\n'
+                '       "c": [20, 85, 970, 690],\n'
+                '       "r": "Large white Chinese characters overlapping the cosplayer create severe figure-ground confusion, obscuring the prominence of the main character.",\n'
+                '       "issue": "Large white Chinese characters overlap the main character\'s head and body, causing severe figure-ground confusion",\n'
+                '       "suggestion": "Reduce the opacity of this text to 15-20% or move the text behind the main character.",\n'
+                '       "s": "critical",\n'
+                '       "g": "poster_design"\n'
+                '     }\n'
+                '  ],\n'
+                '  "compliments": [\n'
+                '     "Vibrant colors with a strong, distinctive anime style.",\n'
+                '     "The overall layout is well-proportioned, guiding the viewer\'s eye effectively.",\n'
+                '     "Lighting effects are used impressively and creatively."\n'
+                '  ],\n'
+                '  "export_markdown": "..."\n'
+                "}"
+            )
+
             
         instruction = (
             f"Here is the list of candidate technical layout/semantic/contrast errors detected in this design:\n"
