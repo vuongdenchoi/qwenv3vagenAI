@@ -510,17 +510,19 @@ def extract_user_context(user_text: str) -> Tuple[bool, Dict[str, Optional[str]]
         print(f"Lỗi trích xuất bối cảnh: {e}")
         return False, {k: None for k in ["thoi_gian", "dia_diem", "lich_su_xa_hoi", "kinh_te", "van_hoa", "art_style", "ty_le", "chat_lieu"]}
 
-def run_antigraviti_phase_2a(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
+def run_antigraviti_phase_2a(image_bytes: bytes, mime_type: str = "image/jpeg", lang: str = "vi") -> dict:
     """
     Chạy Phase 2A: Quét hình ảnh bằng Vision API để phân tích 8 chiều bối cảnh + đặc tính trực quan
     """
+    lang_req = "You must output all text values in Vietnamese (Tiếng Việt)." if lang == "vi" else "You must output all text values in English."
     system_prompt = (
         "You are a visual context analyzer for design critique. "
         "Analyze the uploaded image strictly along these 8 dimensions and extract visual style traits. "
-        "Be specific, factual, and concise. Return structured JSON only."
+        "Be specific, factual, and concise. Return structured JSON only. "
+        f"{lang_req}"
     )
     instruction = (
-        "Analyze this design image and return a JSON object with these exact keys:\n"
+        f"Analyze this design image and return a JSON object with these exact keys. {lang_req}\n"
         "{\n"
         '  "thoi_gian": "Time period / historical era evoked by the design",\n'
         '  "dia_diem": "Geographical setting, region, or cultural space",\n'
@@ -549,7 +551,8 @@ def run_antigraviti_phase_2a(image_bytes: bytes, mime_type: str = "image/jpeg") 
 def run_antigraviti_phase_2b(
     image_bytes: bytes,
     context: dict,
-    mime_type: str = "image/jpeg"
+    mime_type: str = "image/jpeg",
+    lang: str = "vi"
 ) -> dict:
     """
     Chạy Phase 2B: Truy vấn RAG và chạy phân tích pass 2 để đánh giá độ phù hợp và điểm xung đột
@@ -615,14 +618,14 @@ def run_antigraviti_phase_2b(
         f"- Material: {context.get('chat_lieu')}\n\n"
         f"Re-analyze the design image. Return ONLY valid JSON with these exact keys:\n"
         "{\n"
-        '  "thoi_gian": {"analysis": "Analysis in English...", "score": 8},\n'
-        '  "dia_diem": {"analysis": "Analysis in English...", "score": 7},\n'
-        '  "lich_su_xa_hoi": {"analysis": "Analysis in English...", "score": 9},\n'
-        '  "kinh_te": {"analysis": "Analysis in English...", "score": 8},\n'
-        '  "van_hoa": {"analysis": "Analysis in English...", "score": 8},\n'
-        '  "art_style": {"analysis": "Analysis in English...", "score": 9},\n'
-        '  "ty_le": {"analysis": "Analysis in English...", "score": 8},\n'
-        '  "chat_lieu": {"analysis": "Analysis in English...", "score": 7},\n'
+        '  "thoi_gian": {"analysis": "Analysis string...", "score": 8},\n'
+        '  "dia_diem": {"analysis": "Analysis string...", "score": 7},\n'
+        '  "lich_su_xa_hoi": {"analysis": "Analysis string...", "score": 9},\n'
+        '  "kinh_te": {"analysis": "Analysis string...", "score": 8},\n'
+        '  "van_hoa": {"analysis": "Analysis string...", "score": 8},\n'
+        '  "art_style": {"analysis": "Analysis string...", "score": 9},\n'
+        '  "ty_le": {"analysis": "Analysis string...", "score": 8},\n'
+        '  "chat_lieu": {"analysis": "Analysis string...", "score": 7},\n'
         '  "conflicts": [\n'
         '     "Conflict 1 description if any",\n'
         '     "Conflict 2 description if any"\n'
@@ -630,6 +633,7 @@ def run_antigraviti_phase_2b(
         '  "coherence_total": 8.2\n'
         "}\n\n"
         "Note:\n"
+        f"- You MUST write the 'analysis' fields and 'conflicts' strings entirely in {'Vietnamese (Tiếng Việt)' if lang == 'vi' else 'English'}.\n"
         "- Each score must be an integer between 1 and 10.\n"
         "- coherence_total is the overall coherence score (float between 1.0 and 10.0).\n"
         "- If there are no conflicts, conflicts must be an empty list []."
@@ -649,26 +653,42 @@ def format_coherence_stars(score: int) -> str:
     stars_count = round(score / 2)
     return "★" * stars_count + "☆" * (5 - stars_count)
 
-def format_antigraviti_report(analysis_result: dict) -> str:
+def format_antigraviti_report(analysis_result: dict, lang: str = "vi") -> str:
     """
-    Format context analysis results in Phase 2 layout
+    Format context analysis results in Phase 2 layout with localized strings
     """
-    keys_map = {
-        "thoi_gian": ("⏱️ TIME / HISTORICAL PERIOD", "Time"),
-        "dia_diem": ("📍 LOCATION / GEOGRAPHIC CONTEXT", "Location"),
-        "lich_su_xa_hoi": ("🏛️ HISTORICAL & SOCIAL CONTEXT", "History & Society"),
-        "kinh_te": ("💰 ECONOMIC SEGMENT", "Economy"),
-        "van_hoa": ("🎨 CULTURAL CONTEXT", "Culture"),
-        "art_style": ("🖌️ ART STYLE", "Art Style"),
-        "ty_le": ("📐 ASPECT RATIO & COMPOSITION", "Ratio"),
-        "chat_lieu": ("🧱 MATERIAL & MEDIUM", "Material")
-    }
-    
-    report = (
-        "═══════════════════════════════════════════════\n"
-        "🔍 DESIGN CONTEXT ANALYSIS\n"
-        "═══════════════════════════════════════════════\n\n"
-    )
+    if lang == "vi":
+        keys_map = {
+            "thoi_gian": ("⏱️ THỜI GIAN / LỊCH SỬ", "Thời gian"),
+            "dia_diem": ("📍 ĐỊA ĐIỂM / ĐỊA LÝ", "Địa điểm"),
+            "lich_su_xa_hoi": ("🏛️ BỐI CẢNH LỊCH SỬ & XÃ HỘI", "Lịch sử & Xã hội"),
+            "kinh_te": ("💰 PHÂN KHÚC KINH TẾ", "Kinh tế"),
+            "van_hoa": ("🎨 BỐI CẢNH VĂN HÓA", "Văn hóa"),
+            "art_style": ("🖌️ PHONG CÁCH NGHỆ THUẬT", "Phong cách nghệ thuật"),
+            "ty_le": ("📐 TỶ LỆ & BỐ CỤC", "Tỷ lệ"),
+            "chat_lieu": ("🧱 CHẤT LIỆU & PHƯƠNG TIỆN", "Chất liệu")
+        }
+        report = (
+            "═══════════════════════════════════════════════\n"
+            "🔍 PHÂN TÍCH BỐI CẢNH THIẾT KẾ\n"
+            "═══════════════════════════════════════════════\n\n"
+        )
+    else:
+        keys_map = {
+            "thoi_gian": ("⏱️ TIME / HISTORICAL PERIOD", "Time"),
+            "dia_diem": ("📍 LOCATION / GEOGRAPHIC CONTEXT", "Location"),
+            "lich_su_xa_hoi": ("🏛️ HISTORICAL & SOCIAL CONTEXT", "History & Society"),
+            "kinh_te": ("💰 ECONOMIC SEGMENT", "Economy"),
+            "van_hoa": ("🎨 CULTURAL CONTEXT", "Culture"),
+            "art_style": ("🖌️ ART STYLE", "Art Style"),
+            "ty_le": ("📐 ASPECT RATIO & COMPOSITION", "Ratio"),
+            "chat_lieu": ("🧱 MATERIAL & MEDIUM", "Material")
+        }
+        report = (
+            "═══════════════════════════════════════════════\n"
+            "🔍 DESIGN CONTEXT ANALYSIS\n"
+            "═══════════════════════════════════════════════\n\n"
+        )
     
     for key, (label, friendly_name) in keys_map.items():
         data = analysis_result.get(key, {})
@@ -685,16 +705,21 @@ def format_antigraviti_report(analysis_result: dict) -> str:
     report += "───────────────────────────────────────────────\n"
     conflicts = analysis_result.get("conflicts", [])
     if conflicts and isinstance(conflicts, list):
-        report += "⚠️ CONFLICTS (if any):\n"
+        report += "⚠️ CÁC ĐIỂM XUNG ĐỘT:\n" if lang == "vi" else "⚠️ CONFLICTS (if any):\n"
         for conflict in conflicts:
             report += f"- {conflict}\n"
     else:
-        report += "⚠️ CONFLICTS (if any): No significant conflicts detected.\n"
+        report += "⚠️ CÁC ĐIỂM XUNG ĐỘT: Không phát hiện xung đột đáng kể.\n" if lang == "vi" else "⚠️ CONFLICTS (if any): No significant conflicts detected.\n"
         
     report += "───────────────────────────────────────────────\n\n"
-    report += "✅ Is this context description accurate?\n"
-    report += "→ Reply **\"OK\"** to receive feedback on the artwork based on the context above.\n"
-    report += "→ Reply **\"Edit: [details]\"** to modify the context."
+    if lang == "vi":
+        report += "✅ Mô tả bối cảnh này đã chính xác chưa?\n"
+        report += "→ Trả lời **\"OK\"** để nhận đánh giá chi tiết thiết kế dựa trên bối cảnh này.\n"
+        report += "→ Trả lời **\"Sửa: [chi tiết]\"** để điều chỉnh lại bối cảnh."
+    else:
+        report += "✅ Is this context description accurate?\n"
+        report += "→ Reply **\"OK\"** to receive feedback on the artwork based on the context above.\n"
+        report += "→ Reply **\"Edit: [details]\"** to modify the context."
     
     return report
 
@@ -762,6 +787,7 @@ def _box_to_pixel_xyxy(
     return clamp_pixel_xyxy(box[0], box[1], box[2], box[3], img_w, img_h)
 
 
+
 @app.post("/chat")
 async def unified_chat(
     file: Optional[UploadFile] = File(None),
@@ -782,6 +808,7 @@ async def unified_chat(
     key = session_id.strip() if session_id else "anonymous"
     msg = message.strip() if message else ""
     action = action_type.strip().lower() if action_type else ""
+    actual_lang = lang if lang else detect_feedback_language(msg)
 
     persona_dict = parse_persona(persona_context)
     if persona_dict:
@@ -913,7 +940,7 @@ async def unified_chat(
                 query_str = "graphic design poster advertisement"
                 print(f"[Upload] Đang chạy phân tích trực quan ban đầu bằng luồng Willa Multi-Agent với query: '{query_str}'...")
                 agent = get_agent()
-                actual_lang = lang if lang else detect_feedback_language(msg)
+                pass # removed
                 
                 # Chạy Multi-Agent UX Audit thay cho Single Agent cũ
                 audit_result = agent.run_ux_audit(img_data, lang=actual_lang, persona_context=persona_dict)
@@ -1320,7 +1347,7 @@ async def unified_chat(
                     b64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
                     
                     if not reply or reply == "normal chat":
-                        reply = "Here is the detailed design area you requested to zoom in on:"
+                        reply = "Đây là khu vực thiết kế chi tiết mà bạn muốn phóng to:" if actual_lang == 'vi' else "Here is the detailed design area you requested to zoom in on:"
                         
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply)
@@ -1335,7 +1362,7 @@ async def unified_chat(
                         }
                     }
                 else:
-                    reply = "Sorry, I couldn't identify the area you want to zoom in on. Could you please describe it more clearly?"
+                    reply = "Xin lỗi, tôi không thể xác định được khu vực bạn muốn phóng to. Bạn có thể mô tả rõ hơn được không?" if actual_lang == 'vi' else "Sorry, I couldn't identify the area you want to zoom in on. Could you please describe it more clearly?"
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply)
                     return {"type": "chat", "reply": reply}
@@ -1418,7 +1445,7 @@ async def unified_chat(
                 _display_analysis["conflicts"] = analysis_result.get("conflicts", [])
                 _display_analysis["coherence_total"] = analysis_result.get("coherence_total", 5.0)
 
-                report_text = format_antigraviti_report(_display_analysis)
+                report_text = format_antigraviti_report(_display_analysis, actual_lang)
 
                 reply = (
                     "Here is the design context I captured and cross-referenced with the RAG knowledge base! 🔍\n\n"
@@ -1456,7 +1483,7 @@ async def unified_chat(
                     print(f"[Phase-12 OK] Đang chạy lại critique với query: '{query_str}'...")
                     
                     agent = get_agent()
-                    actual_lang = lang if lang else detect_feedback_language(msg)
+                    pass # removed
                     result = agent.analyze(
                         image_bytes=ag_image,
                         filename="image.jpg",
@@ -1549,7 +1576,7 @@ async def unified_chat(
                     _display_analysis["conflicts"] = analysis_result.get("conflicts", [])
                     _display_analysis["coherence_total"] = analysis_result.get("coherence_total", 5.0)
 
-                    report_text = format_antigraviti_report(_display_analysis)
+                    report_text = format_antigraviti_report(_display_analysis, actual_lang)
                     
                     reply = (
                         "I have adjusted the context according to your request! 🛠️\n\n"
@@ -1610,7 +1637,7 @@ async def unified_chat(
                         print(f"Đang chạy lại critique với query: '{query_str}'...")
                         
                         agent = get_agent()
-                        actual_lang = lang if lang else detect_feedback_language(msg)
+                        pass # removed
                         result = agent.analyze(
                             image_bytes=ag_image,
                             filename="image.jpg",
@@ -1700,7 +1727,7 @@ async def unified_chat(
                                 "image_data_url": image_data_url
                             }
                         else:
-                            reply = "Excellent! Context has been confirmed. You can continue chatting to fix any design errors!"
+                            reply = ("Tuyệt vời! Bối cảnh đã được xác nhận. Bạn có thể tiếp tục chat để sửa các lỗi thiết kế!") if actual_lang == 'vi' else ("Excellent! Context has been confirmed. You can continue chatting to fix any design errors!")
                             memory_store.add_turn(key, "user", msg)
                             memory_store.add_turn(key, "assistant", reply)
                             return {"type": "chat", "reply": reply}
@@ -1734,7 +1761,7 @@ async def unified_chat(
                             coherence_total=analysis_result.get("coherence_total", 0.0)
                         )
                         
-                        report_text = format_antigraviti_report(analysis_result)
+                        report_text = format_antigraviti_report(analysis_result, actual_lang)
                         reply = (
                             "I have successfully updated the design context! 🛠️\n"
                             "Here is the adjusted context:\n\n"
@@ -1786,7 +1813,7 @@ async def unified_chat(
                         coherence_total=reanalyzed_result.get("coherence_total", 0.0)
                     )
 
-                    report_text = format_antigraviti_report(reanalyzed_result)
+                    report_text = format_antigraviti_report(reanalyzed_result, actual_lang)
                     reanalyze_reply = (
                         "I have automatically scanned the entire design context from the image! 🔍\n\n"
                         f"{report_text}"
@@ -1811,7 +1838,7 @@ async def unified_chat(
                 # 7. Ý định CHAT thuần túy
                 else:
                     if not reply or reply == "normal chat":
-                        reply = "Is there anything else I can help you with regarding your design?"
+                        reply = "Tôi có thể giúp gì thêm cho bạn về thiết kế này không?" if actual_lang == 'vi' else "Is there anything else I can help you with regarding your design?"
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply)
                     return {
