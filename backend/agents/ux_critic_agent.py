@@ -113,7 +113,7 @@ class UXCriticAgent:
         
         if lang == "vi":
             system_prompt += (
-                "\nLanguage Requirement: All text values (in critique_summary, critique_details, validated_errors 'r', and export_markdown) MUST be written entirely in natural, professional Vietnamese (Tiếng Việt). Keep JSON keys in English, but the string values must be in Vietnamese.\n\n"
+                "\nLanguage Requirement: ALL string values (including critique_summary, issue, guideline_violation, ux_explanation, suggestion, 'r', compliments, export_markdown) MUST be translated into and written entirely in natural, professional Vietnamese (Tiếng Việt). Only the JSON keys and enum values for 's' and 'g' remain in English.\n\n"
                 "=== VÍ DỤ MINH HỌA (FEW-SHOT EXAMPLE) ===\n"
                 "{\n"
                 '  "critique_summary": "Thiết kế poster có điểm mạnh về màu sắc và bố cục, phù hợp với phong cách Genshin Impact. Tuy nhiên, thiết kế còn gặp lỗi về độ tương phản chữ và sắp xếp các yếu tố phụ...",\n'
@@ -121,14 +121,14 @@ class UXCriticAgent:
                 '     {\n'
                 '       "box_2d": [69, 54, 209, 69],\n'
                 '       "issue": "Dòng chữ \'GENSHIN IMPACT\' có độ tương phản cực kỳ thấp (1.02:1), không đạt tiêu chuẩn WCAG.",\n'
-                '       "guideline_violation": "[Color Theory > Color Contrast] — Contrast Ratio Standard",\n'
+                '       "guideline_violation": "[Lý thuyết màu sắc > Độ tương phản] — Tiêu chuẩn tỷ lệ tương phản",\n'
                 '       "ux_explanation": "Chữ quá mờ trên nền xanh đậm làm giảm khả năng nhận diện thương hiệu từ xa.",\n'
                 '       "suggestion": "Chuyển chữ sang màu trắng hoặc vàng sáng để tăng độ tương phản rõ rệt."\n'
                 '     },\n'
                 '     {\n'
                 '       "box_2d": [20, 85, 970, 690],\n'
                 '       "issue": "Ký tự chữ Trung Quốc màu trắng kích thước lớn đè lên đầu và thân nhân vật chính gây nhiễu và tranh chấp hình nền (figure-ground confusion).",\n'
-                '       "guideline_violation": "[Poster Design > II. Composition and Spatial Structure] — Figure-ground must be clear at a glance",\n'
+                '       "guideline_violation": "[Thiết kế Poster > Bố cục và Không gian] — Yếu tố chính-phụ phải rõ ràng",\n'
                 '       "ux_explanation": "Chữ lớn màu trắng đè lên cosplayer làm mờ nhạt tiêu điểm chính của tác phẩm.",\n'
                 '       "suggestion": "Giảm độ mờ (opacity) của dòng chữ này xuống còn 15-20% hoặc chuyển chữ ra phía sau nhân vật chính."\n'
                 '     }\n'
