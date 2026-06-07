@@ -23,8 +23,8 @@ COPY backend/requirements.txt /app/backend/requirements.txt
 # Torch CPU trước (nhỏ hơn CUDA) → pip không tải lại torch khi cài sentence-transformers.
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install torch --index-url https://download.pytorch.org/whl/cpu && \
-    pip install -r /app/backend/requirements.txt
+    pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install -r /app/backend/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 # FAISS index — chỉ rebuild khi design_rules hoặc script index đổi (không rebuild khi sửa main.py).
 COPY design_rules /app/design_rules
