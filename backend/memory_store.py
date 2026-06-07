@@ -41,6 +41,7 @@ class SessionMemory:
     antigraviti_coherence_scores: Optional[Dict[str, int]] = None
     antigraviti_conflicts: Optional[List[str]] = None
     antigraviti_coherence_total: Optional[float] = None
+    reply_lang: Optional[str] = None
     
     updated_at: float = 0.0
 
@@ -261,6 +262,33 @@ class MemoryStore:
                 return None
             return mem.pending_generation_prompt
 
+    def set_reply_lang(self, key: str, lang: str) -> None:
+        key = str(key).strip()
+        lang = str(lang).strip().lower()
+        if not key or lang not in {"vi", "en"}:
+            return
+        now = time.time()
+        with self._lock:
+            self._prune_locked(now)
+            mem = self._data.get(key)
+            if not mem:
+                mem = SessionMemory()
+                self._data[key] = mem
+            mem.reply_lang = lang
+            mem.updated_at = now
+
+    def get_reply_lang(self, key: str) -> Optional[str]:
+        key = str(key).strip()
+        if not key:
+            return None
+        now = time.time()
+        with self._lock:
+            self._prune_locked(now)
+            mem = self._data.get(key)
+            if not mem or not mem.reply_lang:
+                return None
+            return mem.reply_lang
+
     def get_antigraviti_state(self, key: str) -> Tuple[int, Optional[bytes], Optional[dict], Optional[list], Optional[dict], Optional[list], Optional[float]]:
         key = str(key).strip()
         if not key:
@@ -427,6 +455,7 @@ class RedisMemoryStore:
         mem.antigraviti_coherence_scores = payload.get("antigraviti_coherence_scores")
         mem.antigraviti_conflicts = payload.get("antigraviti_conflicts")
         mem.antigraviti_coherence_total = payload.get("antigraviti_coherence_total")
+        mem.reply_lang = payload.get("reply_lang") if payload.get("reply_lang") in {"vi", "en"} else None
         try:
             mem.updated_at = float(payload.get("updated_at") or 0.0)
         except Exception:
@@ -449,6 +478,7 @@ class RedisMemoryStore:
             "antigraviti_coherence_scores": mem.antigraviti_coherence_scores,
             "antigraviti_conflicts": mem.antigraviti_conflicts,
             "antigraviti_coherence_total": mem.antigraviti_coherence_total,
+            "reply_lang": mem.reply_lang,
             "updated_at": mem.updated_at,
         }
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -534,6 +564,23 @@ class RedisMemoryStore:
             if len(mem.turns) > self.max_turns_per_session:
                 mem.turns = mem.turns[-self.max_turns_per_session :]
             self._set(key, mem)
+
+    def set_reply_lang(self, key: str, lang: str) -> None:
+        key = str(key).strip()
+        lang = str(lang).strip().lower()
+        if not key or lang not in {"vi", "en"}:
+            return
+        with self._lock:
+            mem = self._get(key)
+            mem.reply_lang = lang
+            self._set(key, mem)
+
+    def get_reply_lang(self, key: str) -> Optional[str]:
+        key = str(key).strip()
+        if not key:
+            return None
+        mem = self._get(key)
+        return mem.reply_lang if mem.reply_lang in {"vi", "en"} else None
 
     def set_last_analysis(self, key: str, image_bytes: bytes, result: Dict[str, Any]) -> None:
         key = str(key).strip()
