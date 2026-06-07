@@ -355,9 +355,11 @@ async def estimate_tokens(
 async def ux_audit(
     file: UploadFile = File(...),
     session_id: Optional[str] = Form(""),
-    lang: Optional[str] = Form("vi"),
+    lang: Optional[str] = Form(None),
+    reply_lang: Optional[str] = Form(None),
     persona_context: Optional[str] = Form(None)
 ):
+    lang = lang or reply_lang or "vi"
     """
     Endpoint thực hiện Hybrid Multi-Agent UX Audit.
     Tầng 1: Florence-2/OWL-ViT local.
@@ -769,8 +771,10 @@ async def unified_chat(
     error_index: Optional[int] = Form(None),
     box_2d: Optional[str] = Form("[]"),
     persona_context: Optional[str] = Form(None),
-    lang: Optional[str] = Form("vi")
+    lang: Optional[str] = Form(None),
+    reply_lang: Optional[str] = Form(None)
 ):
+    lang = lang or reply_lang or "vi"
     """
     Cổng API hợp nhất (Unified endpoint) thay thế cho /analyze, /chat và /zoom.
     Tự động route dựa trên payload gửi lên.
