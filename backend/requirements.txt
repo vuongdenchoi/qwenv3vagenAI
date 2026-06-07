@@ -12,3 +12,7 @@ scikit-learn
 dashscope
 rank_bm25
 redis
+timm
+einops
+torchvision
+opencv-python-headless

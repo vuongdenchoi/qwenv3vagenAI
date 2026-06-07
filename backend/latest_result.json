@@ -1,169 +1,335 @@
 {
-    "compliments": [
-        "The product is quite well-finished with great attention to detail in the food photography and texture rendering.",
-        "The overall color scheme feels vibrant, playful, and perfectly aligned with a dessert brand’s joyful identity.",
-        "The layout design shows exceptional creativity and clear focal structure around the stacked donuts."
-    ],
     "e": [
         {
             "c": [
-                440,
-                0,
-                815,
-                172
+                201,
+                734,
+                700,
+                982
             ],
-            "r": "Multiple competing focal points: the top pink donut, the red arrow, the 'FRESH!' text, and the blue donut all draw attention simultaneously.",
-            "issue": "The composition lacks a single dominant focal point — the eye is pulled in multiple directions by the bright pink donut, the large red arrow, and the bold 'FRESH!' headline. This violates the requirement for one primary focal point to guide visual hierarchy.",
-            "suggestion": "Rebalance the composition by reducing the size or weight of the red arrow or repositioning it so it points *to* the main subject without dominating the frame; alternatively, lower the brightness of the 'FRESH!' text slightly to let the donuts lead.",
+            "c_grid": [
+                230,
+                630,
+                795,
+                840
+            ],
+            "r": "Tiêu đề 'Tac Vi' bị chồng lên hình ảnh bát mì và nền đồ họa, tạo hiện tượng tranh chấp hình nền (figure-ground confusion), làm giảm khả năng nhận diện ngay lập tức. Cần điều chỉnh độ mờ hoặc vị trí để đảm bảo tiêu đề nổi bật và tách biệt rõ ràng khỏi nền.",
             "s": "critical",
             "g": "poster_design",
-            "rule_violated": "[Poster Design > Elements and Getting Attention] — Single Focal Point Rule",
-            "c_grid": [
-                370,
-                0,
-                685,
-                340
-            ]
+            "id": 0,
+            "issue": "",
+            "suggestion": ""
         },
         {
             "c": [
-                0,
-                0,
-                1190,
-                506
+                276,
+                985,
+                602,
+                1008
             ],
-            "r": "The background has high visual noise and competing textures that interfere with figure-ground clarity, especially under the red arrow and text overlay.",
-            "issue": "The wooden background is too detailed and brightly lit, causing it to compete with the donuts for visual dominance — violating the rule that ground must not overpower the figure. The steam, crumbs, and wood grain distract from the primary subject.",
-            "suggestion": "Apply a subtle tint or desaturation to the background (e.g., warm yellow overlay at 20% opacity) to reduce its contrast and ensure the donuts remain the unambiguous figure.",
-            "s": "major",
-            "g": "poster_design",
-            "rule_violated": "[Poster Design > Composition and Spatial Structure] — Figure-Ground Clarity Rule",
             "c_grid": [
-                0,
-                0,
-                1000,
-                998
-            ]
-        },
-        {
-            "c": [
-                827,
-                0,
-                1154,
-                96
+                315,
+                845,
+                683,
+                863
             ],
-            "r": "The 'FRESH!' text uses a heavy, uneven stroke and inconsistent spacing, creating visual chaos and breaking typographic harmony.",
-            "issue": "The typography for 'FRESH!' features irregular kerning, uneven stroke width, and a chaotic pattern of circular dots beneath it — which disrupts legibility and undermines the poster’s professional tone. It also clashes with the clean, glossy aesthetic of the donuts.",
-            "suggestion": "Use a consistent, bold sans-serif font with uniform stroke weight and proper letter spacing; replace the dot pattern with a simple underline or subtle shadow to maintain rhythm without visual clutter.",
-            "s": "major",
-            "g": "typography",
-            "rule_violated": "[Poster Design > Elements and Getting Attention] — Typography Consistency Rule",
-            "c_grid": [
-                695,
-                0,
-                970,
-                190
-            ]
-        },
-        {
-            "c": [
-                267,
-                71,
-                642,
-                289
-            ],
-            "r": "No recurring visual pattern or structural motif across the image — each donut has unique toppings, colors, and drizzle patterns, preventing campaign continuity.",
-            "issue": "While visually rich, the lack of a repeating compositional or stylistic motif (e.g., same drizzle angle, identical sprinkle density, consistent lighting direction) prevents the image from functioning as part of a larger series — violating the principle that posters in a campaign should share a visual signature.",
-            "suggestion": "Introduce a subtle, repeatable pattern such as a consistent drip trajectory, uniform sprinkle distribution per color family, or a shared lighting source to unify the set if this is part of a multi-poster campaign.",
-            "s": "major",
-            "g": "pattern_design",
-            "rule_violated": "[Poster Design > IV. Pattern, Rhythm, and Campaign Continuity] — Pattern Creates Visual Identity Rule",
-            "c_grid": [
-                225,
-                140,
-                540,
-                570
-            ]
-        },
-        {
-            "c": [
-                791,
-                76,
-                1011,
-                213
-            ],
-            "r": "The red arrow contains the word 'NOW' inside a tilted, non-aligned badge, which breaks visual continuity and creates a disjointed graphic element.",
-            "issue": "The arrow's internal 'NOW' badge is misaligned, rotated, and uses inconsistent line weights — making it feel like an afterthought rather than part of a cohesive visual system. This undermines campaign continuity and appears unprofessional.",
-            "suggestion": "Align the 'NOW' badge with the arrow’s axis, use a consistent stroke weight, and consider integrating it into the arrow’s shape as a unified graphic element instead of a separate label.",
-            "s": "minor",
-            "g": "layout_rules",
-            "rule_violated": "[Layout Design > Alignment & Consistency] — Graphic Element Integration Rule",
-            "c_grid": [
-                665,
-                150,
-                850,
-                420
-            ]
-        }
-    ],
-    "e_raw": [
-        {
-            "r": "Multiple competing focal points: the top pink donut, the red arrow, the 'FRESH!' text, and the blue donut all draw attention simultaneously. <box>(370,0),(685,340)</box><box>(665,150),(850,420)</box><box>(695,0),(970,190)</box>",
-            "issue": "The composition lacks a single dominant focal point — the eye is pulled in multiple directions by the bright pink donut, the large red arrow, and the bold 'FRESH!' headline. This violates the requirement for one primary focal point to guide visual hierarchy.",
-            "suggestion": "Rebalance the composition by reducing the size or weight of the red arrow or repositioning it so it points *to* the main subject without dominating the frame; alternatively, lower the brightness of the 'FRESH!' text slightly to let the donuts lead.",
+            "r": "Dòng chữ 'A 2D Platform game about Breaking The Curse' có độ tương phản chỉ 1.03:1, không đạt mức tối thiểu 4.5:1 theo WCAG. Cần thay đổi màu chữ thành trắng hoặc vàng nhạt, hoặc thêm lớp nền tối nhẹ để tăng độ tương phản rõ rệt.",
             "s": "critical",
-            "g": "poster_design",
-            "rule_violated": "[Poster Design > Elements and Getting Attention] — Single Focal Point Rule"
+            "g": "color_theory",
+            "id": 1,
+            "issue": "",
+            "suggestion": ""
         },
         {
-            "r": "The background has high visual noise and competing textures that interfere with figure-ground clarity, especially under the red arrow and text overlay. <box>(0,0),(1000,998)</box>",
-            "issue": "The wooden background is too detailed and brightly lit, causing it to compete with the donuts for visual dominance — violating the rule that ground must not overpower the figure. The steam, crumbs, and wood grain distract from the primary subject.",
-            "suggestion": "Apply a subtle tint or desaturation to the background (e.g., warm yellow overlay at 20% opacity) to reduce its contrast and ensure the donuts remain the unambiguous figure.",
+            "c": [
+                220,
+                1044,
+                656,
+                1060
+            ],
+            "c_grid": [
+                252,
+                895,
+                745,
+                907
+            ],
+            "r": "Phần thông tin tác giả và vai trò có độ tương phản 1.17:1, không đạt chuẩn WCAG. Đây là phần văn bản dài, quan trọng, nên cần nâng cao độ tương phản bằng cách chuyển sang màu trắng hoặc kem sáng, hoặc thêm nền tối nhẹ.",
+            "s": "critical",
+            "g": "color_theory",
+            "id": 2,
+            "issue": "",
+            "suggestion": ""
+        },
+        {
+            "c": [
+                128,
+                1079,
+                750,
+                1094
+            ],
+            "c_grid": [
+                147,
+                925,
+                852,
+                936
+            ],
+            "r": "Dòng chữ 'Music & SPX...' có độ tương phản 2.52:1, chưa đạt mức tối thiểu 4.5:1. Cần cải thiện bằng cách chuyển sang màu trắng hoặc vàng nhạt, hoặc thêm lớp phủ mờ phía sau chữ.",
             "s": "major",
-            "g": "poster_design",
-            "rule_violated": "[Poster Design > Composition and Spatial Structure] — Figure-Ground Clarity Rule"
-        },
-        {
-            "r": "The 'FRESH!' text uses a heavy, uneven stroke and inconsistent spacing, creating visual chaos and breaking typographic harmony. <box(695,0),(970,190)</box>",
-            "issue": "The typography for 'FRESH!' features irregular kerning, uneven stroke width, and a chaotic pattern of circular dots beneath it — which disrupts legibility and undermines the poster’s professional tone. It also clashes with the clean, glossy aesthetic of the donuts.",
-            "suggestion": "Use a consistent, bold sans-serif font with uniform stroke weight and proper letter spacing; replace the dot pattern with a simple underline or subtle shadow to maintain rhythm without visual clutter.",
-            "s": "major",
-            "g": "typography",
-            "rule_violated": "[Poster Design > Elements and Getting Attention] — Typography Consistency Rule"
-        },
-        {
-            "r": "No recurring visual pattern or structural motif across the image — each donut has unique toppings, colors, and drizzle patterns, preventing campaign continuity. <box>(225,140),(540,570)</box><box>(185,450),(505,860)</box><box>(495,420),(820,880)</box>",
-            "issue": "While visually rich, the lack of a repeating compositional or stylistic motif (e.g., same drizzle angle, identical sprinkle density, consistent lighting direction) prevents the image from functioning as part of a larger series — violating the principle that posters in a campaign should share a visual signature.",
-            "suggestion": "Introduce a subtle, repeatable pattern such as a consistent drip trajectory, uniform sprinkle distribution per color family, or a shared lighting source to unify the set if this is part of a multi-poster campaign.",
-            "s": "major",
-            "g": "pattern_design",
-            "rule_violated": "[Poster Design > IV. Pattern, Rhythm, and Campaign Continuity] — Pattern Creates Visual Identity Rule"
-        },
-        {
-            "r": "The red arrow contains the word 'NOW' inside a tilted, non-aligned badge, which breaks visual continuity and creates a disjointed graphic element. <box>(665,150),(850,420)</box>",
-            "issue": "The arrow's internal 'NOW' badge is misaligned, rotated, and uses inconsistent line weights — making it feel like an afterthought rather than part of a cohesive visual system. This undermines campaign continuity and appears unprofessional.",
-            "suggestion": "Align the 'NOW' badge with the arrow’s axis, use a consistent stroke weight, and consider integrating it into the arrow’s shape as a unified graphic element instead of a separate label.",
-            "s": "minor",
-            "g": "layout_rules",
-            "rule_violated": "[Layout Design > Alignment & Consistency] — Graphic Element Integration Rule"
+            "g": "color_theory",
+            "id": 3,
+            "issue": "",
+            "suggestion": ""
         }
     ],
+    "te": 4,
     "isz": {
-        "w": 1190,
-        "h": 508
+        "w": 880,
+        "h": 1168
     },
     "coord_space": "frame_pixel",
-    "te": 5,
     "ss": {
-        "minor": 1,
-        "major": 3,
-        "critical": 1
+        "minor": 0,
+        "major": 1,
+        "critical": 3
     },
-    "inputtoken": 3729,
-    "outputtoken": 1155,
-    "totaltoken": 4884,
+    "compliments": [
+        "Phong cách minh họa tinh tế, mang đậm dấu ấn văn hóa Việt Nam qua hình ảnh nhân vật, bát mì, lá cây và gam màu ấm áp.",
+        "Bố cục tổng thể cân đối, hướng mắt người xem từ nhân vật chính xuống tiêu đề rồi đến thông tin chi tiết — đúng nguyên tắc đọc theo chiều dọc.",
+        "Sự kết hợp giữa hình ảnh và chữ viết tạo nên một câu chuyện trực quan hấp dẫn, phù hợp với chủ đề 'Breaking The Curse'."
+    ],
+    "errors": [
+        {
+            "c": [
+                230,
+                630,
+                795,
+                840
+            ],
+            "r": "Tiêu đề 'Tac Vi' bị chồng lên hình ảnh bát mì và nền đồ họa, tạo hiện tượng tranh chấp hình nền (figure-ground confusion), làm giảm khả năng nhận diện ngay lập tức. Cần điều chỉnh độ mờ hoặc vị trí để đảm bảo tiêu đề nổi bật và tách biệt rõ ràng khỏi nền.",
+            "s": "critical",
+            "g": "poster_design"
+        },
+        {
+            "c": [
+                315,
+                845,
+                683,
+                863
+            ],
+            "r": "Dòng chữ 'A 2D Platform game about Breaking The Curse' có độ tương phản chỉ 1.03:1, không đạt mức tối thiểu 4.5:1 theo WCAG. Cần thay đổi màu chữ thành trắng hoặc vàng nhạt, hoặc thêm lớp nền tối nhẹ để tăng độ tương phản rõ rệt.",
+            "s": "critical",
+            "g": "color_theory"
+        },
+        {
+            "c": [
+                252,
+                895,
+                745,
+                907
+            ],
+            "r": "Phần thông tin tác giả và vai trò có độ tương phản 1.17:1, không đạt chuẩn WCAG. Đây là phần văn bản dài, quan trọng, nên cần nâng cao độ tương phản bằng cách chuyển sang màu trắng hoặc kem sáng, hoặc thêm nền tối nhẹ.",
+            "s": "critical",
+            "g": "color_theory"
+        },
+        {
+            "c": [
+                147,
+                925,
+                852,
+                936
+            ],
+            "r": "Dòng chữ 'Music & SPX...' có độ tương phản 2.52:1, chưa đạt mức tối thiểu 4.5:1. Cần cải thiện bằng cách chuyển sang màu trắng hoặc vàng nhạt, hoặc thêm lớp phủ mờ phía sau chữ.",
+            "s": "major",
+            "g": "color_theory"
+        }
+    ],
+    "detected_elements": [
+        {
+            "box_2d": [
+                513,
+                220,
+                569,
+                271
+            ],
+            "label": "human face",
+            "score": 0.85,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                0,
+                0,
+                998,
+                998
+            ],
+            "label": "poster",
+            "score": 0.85,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                372,
+                188,
+                650,
+                503
+            ],
+            "label": "woman",
+            "score": 0.85,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                252,
+                38,
+                300,
+                49
+            ],
+            "label": "text: </s>Digital",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                60,
+                59,
+                163,
+                72
+            ],
+            "label": "text: TFF UNIVERSITY",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                252,
+                57,
+                300,
+                67
+            ],
+            "label": "text: Design",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                315,
+                845,
+                683,
+                863
+            ],
+            "label": "text: A 2D Platform game about Breaking The Curse",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                424,
+                881,
+                571,
+                892
+            ],
+            "label": "text: LE THAN THAN RINI",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                252,
+                895,
+                745,
+                907
+            ],
+            "label": "text: Vial Design NOLIGIN N NOOC CHAUA . TRENU YAN & NOLICIN NAN NAN ANSI/",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                190,
+                910,
+                809,
+                922
+            ],
+            "label": "text: Changier en NOLGIN N NOC CHUA & THAN YAN AND NOUCTEN NAN IN ANSI /",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                147,
+                925,
+                852,
+                936
+            ],
+            "label": "text: Pragie NOGTEN 10 NOCCHU N NOO CHAU & THIN YAN ANI & NUCHTEN NUO CHAU/",
+            "score": 0.8,
+            "consensus": false
+        },
+        {
+            "box_2d": [
+                255,
+                954,
+                740,
+                965
+            ],
+            "label": "text: MADE & S.S.NOLTEN NO NOO CHU A THIN THAN I ANSI & NOCHTEN YAN I NOUCHEN NAM IN NOCC CHAU /",
+            "score": 0.8,
+            "consensus": false
+        }
+    ],
+    "markdown_report": "# Báo cáo Đánh giá UX\n\n## Tổng quan\nThiết kế poster này thể hiện tài năng nghệ thuật và cảm hứng văn hóa Việt Nam rất tốt, với hình ảnh nhân vật chính được vẽ tay đẹp mắt, bố cục cân đối và sử dụng màu sắc ấm áp, hài hòa. Tuy nhiên, thiết kế đang gặp nhiều vấn đề nghiêm trọng về độ tương phản chữ — đặc biệt ở phần thông tin chi tiết phía dưới — khiến nội dung khó đọc từ xa, gây mệt mỏi thị giác và vi phạm nguyên tắc truy cập (WCAG). Ngoài ra, tiêu đề lớn 'Tac Vi' bị che lấp một phần bởi các yếu tố đồ họa nền, làm giảm tính nổi bật của tiêu đề và tạo hiện tượng tranh chấp hình nền (figure-ground confusion), đồng thời thiếu không gian thở (breathing room) xung quanh các khối văn bản nhỏ, dẫn đến cảm giác chật chội và rối mắt. Thiết kế chưa tuân thủ quy tắc phân cấp kiểu chữ rõ ràng: tiêu đề lớn, phụ đề nhỏ nhưng lại có độ tương phản thấp hơn cả phần mô tả chi tiết, làm mất đi cấu trúc đọc theo thứ tự ưu tiên.\n\nCác lỗi kỹ thuật như sai lưới 8pt chỉ là minor, trong khi các lỗi về độ tương phản và bố cục hình nền là critical — cần được xử lý ngay trước khi xuất bản hoặc trình bày công khai.\n\n## Chi tiết lỗi\n\n### 1. Tranh chấp hình nền (Figure-Ground Confusion) - *Critical*\n- **Vị trí**: `[230, 630, 795, 840]` — Tiêu đề 'Tac Vi' bị chồng lên hình ảnh bát mì và các yếu tố nền phức tạp.\n- **Lỗi**: Người xem khó xác định rõ ràng vùng 'hình' (figure) – tức là tiêu đề – khỏi nền, làm giảm khả năng nhận diện thương hiệu ngay lập tức.\n- **Khuyến nghị**: Tăng độ mờ (opacity) của tiêu đề xuống còn ~85–90% hoặc thêm lớp nền tối nhẹ (như semi-black overlay) để tạo sự tương phản rõ rệt mà không làm mất đi vẻ thẩm mỹ. Hoặc di chuyển tiêu đề sang vị trí bên dưới, tránh chồng lên nhân vật và bát mì.\n\n### 2. Độ tương phản chữ quá thấp - *Critical*\n- **Vị trí**: `[315, 845, 683, 863]` — Dòng chữ 'A 2D Platform game about Breaking The Curse'\n- **Lỗi**: Độ tương phản chỉ 1.03:1, không đạt mức tối thiểu 4.5:1 theo WCAG. Màu chữ gần như hòa vào nền tối, khiến người xem phải squint để đọc — đây là lỗi nghiêm trọng với người dùng có thị lực kém hoặc đang xem trên thiết bị nhỏ.\n- **Khuyến nghị**: Chuyển màu chữ sang trắng hoặc vàng nhạt (ví dụ #F5F5F5 hoặc #FFD700), hoặc đặt nền tối nhẹ (như đen đậm + 10% opacity) phía sau dòng chữ để tăng độ tương phản rõ rệt.\n\n### 3. Thông tin tác giả không đọc được - *Critical*\n- **Vị trí**: `[252, 895, 745, 907]` — Phần thông tin tác giả và vai trò (tên nhóm, chức danh, vai trò...)\n- **Lỗi**: Độ tương phản 1.17:1, không đạt chuẩn WCAG. Đây là phần văn bản dài nhất, thường được người xem đọc kỹ — vì vậy việc không thể đọc được sẽ làm suy giảm uy tín và chuyên nghiệp của sản phẩm.\n- **Khuyến nghị**: Sử dụng màu chữ trắng hoặc kem sáng (#E0E0E0), kết hợp với nền tối có độ bão hòa vừa phải (không quá đen) để tạo độ tương phản đủ cao. Có thể thêm margin nhỏ phía sau chữ để làm nổi bật.\n\n### 4. Dòng chữ 'Music & SPX...' chưa đạt chuẩn - *Major*\n- **Vị trí**: `[147, 925, 852, 936]` — Dòng chữ 'Music & SPX...'\n- **Lỗi**: Độ tương phản 2.52:1, chưa đạt mức tối thiểu 4.5:1. Với font chữ nhỏ, người dùng cần độ tương phản cao hơn để đọc dễ dàng, đặc biệt trong điều kiện ánh sáng yếu.\n- **Khuyến nghị**: Tăng độ tương phản bằng cách chuyển sang màu trắng hoặc vàng nhạt, hoặc thêm lớp phủ mờ (semi-transparent black) phía sau chữ để làm nổi bật.\n\n## Khen ngợi\n- Phong cách minh họa tinh tế, mang đậm dấu ấn văn hóa Việt Nam qua hình ảnh nhân vật, bát mì, lá cây và gam màu ấm áp.\n- Bố cục tổng thể cân đối, hướng mắt người xem từ nhân vật chính xuống tiêu đề rồi đến thông tin chi tiết — đúng nguyên tắc đọc theo chiều dọc.\n- Sự kết hợp giữa hình ảnh và chữ viết tạo nên một câu chuyện trực quan hấp dẫn, phù hợp với chủ đề 'Breaking The Curse'.",
+    "details": [
+        {
+            "box_2d": [
+                230,
+                630,
+                795,
+                840
+            ],
+            "issue": "Tiêu đề 'Tac Vi' có kích thước lớn, nhưng nằm chồng lên hình ảnh bát mì và các yếu tố nền phức tạp, gây hiện tượng tranh chấp hình nền (figure-ground confusion) nghiêm trọng. Người xem khó xác định rõ ràng vùng 'hình' (figure) – tức là tiêu đề – khỏi nền, làm giảm khả năng nhận diện thương hiệu ngay lập tức.",
+            "guideline_violation": "[Poster Design > II. Composition and Spatial Structure] — Rule 7: Figure-ground must be clear at a glance",
+            "ux_explanation": "Khi tiêu đề bị che lấp hoặc hòa lẫn vào nền đồ họa, người xem phải nỗ lực để phân biệt giữa nội dung và nền, làm chậm quá trình tiếp nhận thông điệp. Điều này đặc biệt nguy hiểm với tiêu đề chính, vốn là điểm khởi đầu của mọi trải nghiệm đọc.",
+            "fix_recommendation": "Tăng độ mờ (opacity) của tiêu đề xuống còn ~85–90% hoặc thêm lớp nền tối nhẹ (như semi-black overlay) để tạo sự tương phản rõ rệt mà không làm mất đi vẻ thẩm mỹ. Hoặc di chuyển tiêu đề sang vị trí bên dưới, tránh chồng lên nhân vật và bát mì."
+        },
+        {
+            "box_2d": [
+                315,
+                845,
+                683,
+                863
+            ],
+            "issue": "Dòng chữ 'A 2D Platform game about Breaking The Curse' có độ tương phản rất thấp (1.03:1), không đạt mức tối thiểu 4.5:1 theo WCAG. Màu chữ gần như hòa vào nền tối, khiến người xem phải squint để đọc — đây là lỗi nghiêm trọng với người dùng có thị lực kém hoặc đang xem trên thiết bị nhỏ.",
+            "guideline_violation": "[Color Theory > IX. Color Relationships] — Rule 27: Use analogous colors for harmony and cohesion (được áp dụng cho độ tương phản, nhưng ở đây là lỗi về độ tương phản chứ không phải màu sắc không hợp lý)",
+            "ux_explanation": "Mức độ tương phản thấp làm tăng thời gian đọc và gây căng thẳng thị giác. Trong thiết kế poster, dòng phụ đề nên dễ đọc ngay cả từ khoảng cách 2–3 mét, nên cần đảm bảo độ tương phản tối thiểu 4.5:1 cho chữ thân (body text).",
+            "fix_recommendation": "Chuyển màu chữ sang trắng hoặc vàng nhạt (ví dụ #F5F5F5 hoặc #FFD700), hoặc đặt nền tối nhẹ (như đen đậm + 10% opacity) phía sau dòng chữ để tăng độ tương phản rõ rệt."
+        },
+        {
+            "box_2d": [
+                252,
+                895,
+                745,
+                907
+            ],
+            "issue": "Phần thông tin tác giả và vai trò (tên nhóm, chức danh, vai trò...) có độ tương phản cực kỳ thấp (1.17:1), vượt xa giới hạn an toàn. Đây là phần văn bản dài nhất, thường được người xem đọc kỹ — vì vậy việc không thể đọc được sẽ làm suy giảm uy tín và chuyên nghiệp của sản phẩm.",
+            "guideline_violation": "[Typography > II. Hierarchy and Reading Order] — Rule 4: Hierarchy is the arrangement of elements according to importance",
+            "ux_explanation": "Nếu phần mô tả chi tiết (vai trò, tên người tham gia) không thể đọc được, người xem sẽ nghi ngờ chất lượng tổng thể của dự án. Việc này đặc biệt nghiêm trọng nếu thiết kế phục vụ mục đích học thuật hoặc trình diễn tại trường đại học.",
+            "fix_recommendation": "Sử dụng màu chữ trắng hoặc kem sáng (#E0E0E0), kết hợp với nền tối có độ bão hòa vừa phải (không quá đen) để tạo độ tương phản đủ cao. Có thể thêm margin nhỏ phía sau chữ để làm nổi bật."
+        },
+        {
+            "box_2d": [
+                147,
+                925,
+                852,
+                936
+            ],
+            "issue": "Dòng chữ 'Music & SPX...' có độ tương phản 2.52:1 — vẫn chưa đạt chuẩn WCAG (4.5:1), đặc biệt khi nó nằm gần cuối poster, nơi người xem thường dành ít thời gian để đọc. Đây là lỗi có thể gây bỏ sót thông tin quan trọng.",
+            "guideline_violation": "[Color Theory > IX. Color Relationships] — Rule 27: Use analogous colors for harmony and cohesion (trong ngữ cảnh này, không phải lỗi về màu sắc, mà là lỗi về độ tương phản)",
+            "ux_explanation": "Mặc dù độ tương phản 2.52:1 cao hơn so với các dòng khác, nhưng vẫn không đủ cho văn bản body. Với font chữ nhỏ, người dùng cần độ tương phản cao hơn để đọc dễ dàng, đặc biệt trong điều kiện ánh sáng yếu.",
+            "fix_recommendation": "Tăng độ tương phản bằng cách chuyển sang màu trắng hoặc vàng nhạt, hoặc thêm lớp phủ mờ (semi-transparent black) phía sau chữ để làm nổi bật."
+        }
+    ],
     "analyzed_size": [
-        1190,
-        508
+        880,
+        1168
     ]
 }

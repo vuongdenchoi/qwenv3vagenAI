@@ -41,7 +41,7 @@ Instructions:
    - Colors & Contrast: Poor figure-ground contrast, clashing palettes, accessibility issues.
    - Layout & Hierarchy: Cluttered composition, lack of alignment, inconsistent spacing, no clear focal point.
    - CTA (Call to Action) & Messaging: Unclear message, hidden/weak CTA button, poor visual emphasis on the main goal.
- 5. Bounding box format: You MUST use your native grounding capability. In your reasoning (`r`), append `<box>(xmin,ymin),(xmax,ymax)</box>` (same order as `"c"`). Always include `"c": [xmin, ymin, xmax, ymax]` on grid 0–1000. The box must tightly wrap the problematic element.
+ 5. Bounding box format: You MUST use the exact bounding box array `[xmin, ymin, xmax, ymax]` from the CANDIDATE ERRORS for the corresponding violation. Do not use `<box>` tags. Always include `"c": [xmin, ymin, xmax, ymax]` strictly matching the candidate error's box.
  6. Prioritize critical errors! Do not return more than 5 errors to avoid overwhelming the user.
  7. Under-the-hood reference (Developer Attribution): For EACH violation, select the exact rule title header (e.g. `[Color Theory > Color contrast] — Rule 5 — Color Contrast Ratio`) from the DESIGN STANDARDS list above that this error breaches. Return this in a dedicated key `"rule_violated"`. This is a backend field for developers and will not be displayed to the user.
  8. Language Requirement: You MUST return all values in English. Compliments, issues, suggestions, and descriptions must be in English.
@@ -72,17 +72,17 @@ Return ONLY valid JSON — no markdown, no extra text:
 If after thorough inspection the design truly has NO violations at all, return {{"compliments": ["...", "...", "..."], "e": []}}.
 
 === FEW-SHOT EXAMPLE (Reference output for a greeting card with many issues) ===
-{{
+{
   "compliments": [
     "The product is quite well-finished with great attention to detail.",
     "The overall color scheme feels warm, welcoming, and demonstrates solid color harmony.",
     "The layout design shows exceptional creativity and clear focal structure."
   ],
   "e": [
-  {{"c": [0, 30, 563, 136], "r": "The title uses a curly script font with very low contrast against the background... <box>(30,0),(136,563)</box>", "issue": "The title uses a curly script font with very low contrast against the background, breaking visual hierarchy and making it hard to read.", "suggestion": "Change to a bold sans-serif font and increase text/background color contrast.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Contrast] — Title Legibility Rule"}},
-  {{"c": [306, 136, 629, 257], "r": "The Call to Action (CTA) button blends in due to a purple border matching the background color... <box>(136,306),(257,629)</box>", "issue": "The Call to Action (CTA) button blends in due to a purple border matching the background color, failing to create a visual focal point.", "suggestion": "Use a high-contrast solid background color for the CTA button to attract attention.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Focal Points] — CTA Button Contrast Rule"}},
-  {{"c": [448, 329, 623, 636], "r": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise... <box>(448,329),(636,623)</box>", "issue": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise.", "suggestion": "Group related information, use consistent alignment, and increase white space.", "s": "major", "g": "layout_rules", "rule_violated": "[Layout Design > Composition] — Whitespace & Spacing Rule"}},
-  {{"c": [0, 0, 649, 896], "r": "The overall design lacks clear visual hierarchy and a primary focal point... <box>(0,0),(896,649)</box>", "issue": "The overall design lacks clear visual hierarchy and a primary focal point, obscuring the core message.", "suggestion": "Reorganize the layout to guide the viewer's eye from the Main Title -> Benefits -> CTA Button.", "s": "critical", "g": "pattern_design", "rule_violated": "[Layout Design > Visual Hierarchy] — Compositional Hierarchy Rule"}}
+  {{"c": [0, 30, 563, 136], "r": "The title uses a curly script font with very low contrast against the background...", "issue": "The title uses a curly script font with very low contrast against the background, breaking visual hierarchy and making it hard to read.", "suggestion": "Change to a bold sans-serif font and increase text/background color contrast.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Contrast] — Title Legibility Rule"}},
+  {{"c": [306, 136, 629, 257], "r": "The Call to Action (CTA) button blends in due to a purple border matching the background color...", "issue": "The Call to Action (CTA) button blends in due to a purple border matching the background color, failing to create a visual focal point.", "suggestion": "Use a high-contrast solid background color for the CTA button to attract attention.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Focal Points] — CTA Button Contrast Rule"}},
+  {{"c": [448, 329, 623, 636], "r": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise...", "issue": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise.", "suggestion": "Group related information, use consistent alignment, and increase white space.", "s": "major", "g": "layout_rules", "rule_violated": "[Layout Design > Composition] — Whitespace & Spacing Rule"}},
+  {{"c": [0, 0, 649, 896], "r": "The overall design lacks clear visual hierarchy and a primary focal point...", "issue": "The overall design lacks clear visual hierarchy and a primary focal point, obscuring the core message.", "suggestion": "Reorganize the layout to guide the viewer's eye from the Main Title -> Benefits -> CTA Button.", "s": "critical", "g": "pattern_design", "rule_violated": "[Layout Design > Visual Hierarchy] — Compositional Hierarchy Rule"}}
 ]}}
 === END OF EXAMPLE — Now analyze the NEW image below with the same critical depth ===
 """
@@ -95,7 +95,8 @@ class PromptAgent:
         self,
         retrieved_rules: List[dict],
         confirmed_context: Optional[dict] = None,
-        persona_context: Optional[dict] = None
+        persona_context: Optional[dict] = None,
+        lang: Optional[str] = None
     ) -> Tuple[str, str]:
         """
         Build system prompt and user instruction from retrieved rules.
@@ -172,4 +173,19 @@ class PromptAgent:
                 )
                 instruction = persona_text + instruction
 
-        return SYSTEM_PROMPT, instruction
+        system_prompt = SYSTEM_PROMPT
+        if lang == "vi":
+            system_prompt = system_prompt.replace(
+                "All output text, including compliments, reasoning ('r'), issues, and suggestions, MUST be written entirely in English. Under no circumstances should any Vietnamese language be returned.",
+                "All output text, including compliments, reasoning ('r'), issues, and suggestions, MUST be written entirely in Vietnamese (Tiếng Việt). Under no circumstances should any English language be returned for these text fields. Keep the JSON keys in English ('compliments', 'e', 'r', 'issue', 'suggestion', etc.) but their values must be in natural, professional Vietnamese."
+            )
+            instruction = instruction.replace(
+                "8. Language Requirement: You MUST return all values in English. Compliments, issues, suggestions, and descriptions must be in English.",
+                "8. Yêu cầu ngôn ngữ: Bạn PHẢI trả về tất cả các giá trị text (compliments, issues, suggestions, descriptions, reasoning) bằng tiếng Việt. Giữ nguyên các key của JSON bằng tiếng Anh."
+            )
+            instruction = instruction.replace(
+                "9. Compliments Structure Guidelines: In the \"compliments\" field, you MUST return exactly 2-3 compliments following these structured criteria in English:",
+                "9. Hướng dẫn cấu trúc lời khen (Compliments): Trong trường \"compliments\", bạn PHẢI trả về chính xác 2-3 lời khen theo các tiêu chí cấu trúc bằng tiếng Việt:"
+            )
+
+        return system_prompt, instruction

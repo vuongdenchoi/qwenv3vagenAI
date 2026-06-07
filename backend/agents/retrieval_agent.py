@@ -12,7 +12,7 @@ os.environ["USE_TORCH"] = "1"
 import json
 import re
 import numpy as np
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set, Tuple, Optional
 from pathlib import Path
 from rank_bm25 import BM25Okapi
 
@@ -132,7 +132,7 @@ class RetrievalAgent:
     # ------------------------------------------------------------------
     # Main retrieval (Hybrid Search)
     # ------------------------------------------------------------------
-    def retrieve(self, query: str) -> list:
+    def retrieve(self, query: str, boosting_categories: Optional[Set[str]] = None) -> list:
         """Return top-k relevant rules using Hybrid Search (Dense MiniLM + Sparse BM25) and RRF.
         
         Hỗ trợ tiếng Việt + tiếng Anh với model paraphrase-multilingual-MiniLM-L12-v2.
@@ -154,6 +154,9 @@ class RetrievalAgent:
 
         # --- 4. Apply Category Boost on RRF Scores ---
         boosted_categories = self._detect_categories(query)
+        if boosting_categories:
+            boosted_categories = boosted_categories.union(boosting_categories)
+            
         final_scores = {}
         for idx, rrf_score in rrf_scores.items():
             entry = self.metadata[idx]

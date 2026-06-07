@@ -14,10 +14,10 @@ from dashscope import MultiModalConversation
 # Config
 # -----------------------------------------------------------------------
 QWEN_API_KEY = os.getenv("DASHSCOPE_API_KEY")
-QWEN_MODEL   = os.getenv("QWEN_MODEL", "qwen2.5-vl-72b-instruct") 
+QWEN_MODEL   = os.getenv("QWEN_MODEL", "qwen3-vl-flash") 
 
-# Dùng endpoint quốc tế
-dashscope.base_http_api_url = "https://dashscope-intl.aliyuncs.com/api/v1"
+# Dùng endpoint quốc tế hoặc nội địa dựa trên biến môi trường DASHSCOPE_API_BASE (mặc định là international)
+dashscope.base_http_api_url = os.getenv("DASHSCOPE_API_BASE", "https://dashscope-intl.aliyuncs.com/api/v1")
 
 def extract_usage(response) -> dict:
     if hasattr(response, 'usage') and response.usage:
@@ -196,11 +196,40 @@ class QwenAgent:
         )
         try:
             parsed = self._parse_json_response(raw_text)
-        except (ValueError, json.JSONDecodeError):
-            # Fallback: model trả về text thường (không phải JSON)
-            # Strip <think> blocks nếu còn sót
+        except (ValueError, json.JSONDecodeError) as e:
+            # Fallback: model trả về text thường hoặc JSON bị lỗi cú pháp/cắt cụt
+            print(f"[DEBUG] JSON parse failed: {e}")
             clean = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
-            parsed = {"reply": clean, "zoom_command": None}
+            
+            # Cố gắng cứu vãn các trường bằng Regex
+            intent_match = re.search(r'"intent"\s*:\s*"(.*?)"', clean, re.IGNORECASE)
+            intent = intent_match.group(1).strip() if intent_match else "CHAT"
+            
+            reply_match = re.search(r'"reply"\s*:\s*"(.*?)"', clean, re.DOTALL)
+            if not reply_match:
+                reply_match = re.search(r'"reply"\s*:\s*"(.*)', clean, re.DOTALL)
+            
+            gen_prompt_match = re.search(r'"generate_image_prompt"\s*:\s*"(.*?)"', clean, re.IGNORECASE | re.DOTALL)
+            if not gen_prompt_match:
+                gen_prompt_match = re.search(r'"generate_image_prompt"\s*:\s*"(.*)', clean, re.IGNORECASE | re.DOTALL)
+                
+            if reply_match:
+                reply_text = reply_match.group(1).strip()
+                reply_text = re.sub(r'"?\s*}?\s*$', '', reply_text)
+                
+                gen_prompt_text = None
+                if gen_prompt_match:
+                    gen_prompt_text = gen_prompt_match.group(1).strip()
+                    gen_prompt_text = re.sub(r'"?\s*}?\s*$', '', gen_prompt_text)
+                
+                parsed = {
+                    "intent": intent,
+                    "reply": reply_text,
+                    "generate_image_prompt": gen_prompt_text,
+                    "zoom_command": None
+                }
+            else:
+                parsed = {"intent": "CHAT", "reply": clean, "zoom_command": None}
         if isinstance(parsed, dict):
             parsed["_usage"] = usage
         return parsed

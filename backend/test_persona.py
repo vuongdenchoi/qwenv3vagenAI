@@ -134,8 +134,13 @@ def test_unified_chat_pipeline():
     main.get_agent = lambda: mock_agent
     
     try:
-        # A: Call /chat with no persona
-        dummy_file = ("test.jpg", b"\xff\xd8\xff\xe0", "image/jpeg")
+        # Create a real 1x1 dummy image using Pillow to avoid identification errors
+        from PIL import Image
+        import io
+        img = Image.new("RGB", (1, 1), color="white")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG")
+        dummy_file = ("test.jpg", buf.getvalue(), "image/jpeg")
         response = client.post(
             "/chat",
             data={

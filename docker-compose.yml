@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  ai-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: Willa-ai-server:latest
+    container_name: Willa-ai-server
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/static_temp:/app/backend/static_temp
+    restart: always

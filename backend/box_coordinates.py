@@ -210,10 +210,20 @@ def resolve_best_box_pixel(
     if raw_box and isinstance(raw_box, list) and len(raw_box) == 4:
         try:
             c = [int(v) for v in raw_box]
-            for cand in (c, [c[1], c[0], c[3], c[2]]):
-                pixel = clamp_pixel_xyxy(cand[0], cand[1], cand[2], cand[3], img_w, img_h, pad_px=0)
+            # If c_grid is not yet in err and all coords are within 1000, it is a grid box.
+            # Convert it to pixel coordinates.
+            if "c_grid" not in err and all(0 <= v <= QWEN_GRID_MAX for v in c):
+                pixel = grid_to_pixel_xyxy(c, img_w, img_h, pad_px=0)
                 if pixel:
-                    scored.append((pixel, 5.0 if cand == c else 0.0))
+                    scored.append((pixel, 5.0))
+                pixel_swapped = grid_to_pixel_xyxy([c[1], c[0], c[3], c[2]], img_w, img_h, pad_px=0)
+                if pixel_swapped:
+                    scored.append((pixel_swapped, 0.0))
+            else:
+                for cand in (c, [c[1], c[0], c[3], c[2]]):
+                    pixel = clamp_pixel_xyxy(cand[0], cand[1], cand[2], cand[3], img_w, img_h, pad_px=0)
+                    if pixel:
+                        scored.append((pixel, 5.0 if cand == c else 0.0))
         except (TypeError, ValueError):
             pass
 

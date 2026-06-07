@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WillaAI — Hybrid Multi-Agent UX Audit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #0f0f12;
+      --panel-bg: #16161f;
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-purple: #8b5cf6;
+      --accent-purple-glow: rgba(139, 92, 246, 0.35);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.2);
+      --critical: #ef4444;
+      --major: #f59e0b;
+      --minor: #3b82f6;
+      --radius: 12px;
+      --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      font-family: var(--font-family);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      height: 64px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo span {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .header-btn {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .header-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .header-btn.accent {
+      background: var(--accent-purple);
+      border-color: transparent;
+    }
+
+    .header-btn.accent:hover {
+      background: #7c3aed;
+      box-shadow: 0 0 12px var(--accent-purple-glow);
+    }
+
+    /* Main workspace layout */
+    .workspace {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Left image visualizer */
+    .visualizer-pane {
+      flex: 1.2;
+      background: #09090b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-right: 1px solid var(--panel-border);
+      padding: 20px;
+    }
+
+    /* Right analysis panel */
+    .analysis-pane {
+      flex: 1;
+      background: var(--panel-bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Upload zone */
+    .dropzone {
+      border: 2px dashed rgba(139, 92, 246, 0.3);
+      background: rgba(22, 22, 31, 0.6);
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .dropzone:hover {
+      border-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.04);
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.1);
+    }
+
+    .dropzone-icon {
+      font-size: 3rem;
+      background: linear-gradient(135deg, #c084fc, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .dropzone-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .dropzone-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Canvas / Image container */
+    .canvas-container {
+      position: relative;
+      max-width: 100%;
+      max-height: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      border-radius: 8px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .canvas-container img {
+      max-width: 100%;
+      max-height: 80vh;
+      display: block;
+    }
+
+    .canvas-container canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+
+    /* Toolbar below canvas */
+    .visualizer-toolbar {
+      margin-top: 16px;
+      display: none;
+      gap: 10px;
+    }
+
+    .toolbar-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .toolbar-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .toolbar-btn.active {
+      background: var(--accent-purple);
+      border-color: transparent;
+    }
+
+    /* Right pane layout: Tabs + scroll content */
+    .tab-header {
+      display: flex;
+      border-bottom: 1px solid var(--panel-border);
+      background: rgba(0,0,0,0.15);
+      padding: 0 16px;
+    }
+
+    .tab-btn {
+      padding: 14px 20px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-purple);
+      border-bottom-color: var(--accent-purple);
+    }
+
+    .tab-content-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Technical Errors List styles */
+    .error-category-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .errors-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .error-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .error-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+    }
+
+    .error-card.critical::before { background-color: var(--critical); }
+    .error-card.major::before { background-color: var(--major); }
+    .error-card.minor::before { background-color: var(--minor); }
+
+    .error-card:hover {
+      background: rgba(255,255,255,0.04);
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .error-card.selected {
+      background: rgba(139, 92, 246, 0.06);
+      border-color: var(--accent-purple);
+    }
+
+    .error-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .error-tag {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .error-tag.critical { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .error-tag.major { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .error-tag.minor { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+
+    .error-cat-badge {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.06);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .error-text {
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--text-main);
+    }
+
+    /* LLM Critique content styles */
+    .critique-summary-box {
+      background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(99,102,241,0.08));
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .critic-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .critique-detail-card {
+      background: rgba(255,255,255,0.015);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+
+    .critique-detail-card:hover {
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .critique-detail-card.selected {
+      border-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.04);
+    }
+
+    .critique-detail-issue {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .critique-detail-violation {
+      font-size: 0.75rem;
+      color: var(--accent-purple);
+      font-weight: 600;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .critique-detail-desc {
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .critique-detail-fix {
+      font-size: 0.88rem;
+      padding: 10px 12px;
+      background: rgba(16, 185, 129, 0.05);
+      border-left: 3px solid var(--accent-green);
+      border-radius: 0 6px 6px 0;
+      color: #d1fae5;
+    }
+
+    /* Agent flow log (SVG trace) styles */
+    .agent-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .agent-timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--panel-border);
+    }
+
+    .timeline-node {
+      position: relative;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1f1f2e;
+      border: 3px solid var(--panel-border);
+      transition: all 0.3s;
+    }
+
+    .timeline-node.done .timeline-dot {
+      background: var(--accent-green);
+      border-color: var(--accent-green-glow);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    .timeline-node.running .timeline-dot {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple-glow);
+      box-shadow: 0 0 8px var(--accent-purple);
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+    }
+
+    .timeline-content {
+      background: rgba(255,255,255,0.015);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .timeline-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .timeline-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Footer / Bottom Actions */
+    .pane-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--panel-border);
+      display: flex;
+      gap: 12px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .pane-footer button {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid var(--panel-border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-main);
+    }
+
+    .pane-footer button:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .pane-footer button.primary {
+      background: var(--accent-purple);
+      border-color: transparent;
+    }
+
+    .pane-footer button.primary:hover {
+      background: #7c3aed;
+      box-shadow: 0 0 12px var(--accent-purple-glow);
+    }
+
+    /* Loader Modal overlay */
+    .loader-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 9, 11, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .radar-scanner {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      border-radius: 50%;
+      border: 2px solid rgba(139, 92, 246, 0.25);
+      overflow: hidden;
+    }
+
+    .radar-scanner::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: conic-gradient(from 0deg, transparent 50%, var(--accent-purple) 100%);
+      animation: rotate-scanner 2s linear infinite;
+      transform-origin: center;
+      border-radius: 50%;
+      opacity: 0.6;
+    }
+
+    @keyframes rotate-scanner {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .radar-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--accent-purple);
+      box-shadow: 0 0 12px var(--accent-purple);
+      animation: scan-vertical 2s ease-in-out infinite;
+    }
+
+    @keyframes scan-vertical {
+      0%, 100% { top: 10%; }
+      50% { top: 90%; }
+    }
+
+    .loader-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .loader-subtext {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      animation: pulse-text 1.5s infinite;
+      height: 20px;
+    }
+
+    @keyframes pulse-text {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">🪄 Willa<span>AI</span> <small style="font-weight: normal; font-size: 0.75rem; color: var(--text-muted)">UX Audit Dashboard</small></div>
+    <div class="header-actions">
+      <a href="/" class="header-btn">Quay lại Chat</a>
+      <a href="/element-layer" class="header-btn">Tách Layer</a>
+    </div>
+  </header>
+
+  <div class="workspace">
+    
+    <!-- Left Pane: Graphic Design Viewer -->
+    <div class="visualizer-pane" id="visualizerPane">
+      
+      <!-- Upload Dropzone -->
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)" />
+        <div class="dropzone-icon">📁</div>
+        <div class="dropzone-title">Tải lên thiết kế giao diện (UI Design)</div>
+        <div class="dropzone-subtitle">Kéo thả hoặc click để chọn ảnh (JPEG, PNG, WEBP)</div>
+      </div>
+
+      <!-- Interactive Canvas Viewer -->
+      <div class="canvas-container" id="canvasContainer">
+        <img id="sourceImage" src="" alt="Source Design" />
+        <canvas id="overlayCanvas"></canvas>
+      </div>
+
+      <!-- Visualizer Toolbar -->
+      <div class="visualizer-toolbar" id="visualizerToolbar">
+        <button class="toolbar-btn active" id="toggleConsensus" onclick="toggleLayer('consensus')">Consensus Bounding Boxes</button>
+        <button class="toolbar-btn" id="toggleErrors" onclick="toggleLayer('errors')">Hiển thị vùng lỗi</button>
+        <button class="toolbar-btn" onclick="clearCanvasZoom()">Reset Zoom</button>
+      </div>
+
+    </div>
+
+    <!-- Right Pane: Analysis, Logs and Reports -->
+    <div class="analysis-pane">
+      
+      <div class="tab-header">
+        <button class="tab-btn active" onclick="switchTab('tab-critique')">Phê bình UX (LLM Critic)</button>
+        <button class="tab-btn" onclick="switchTab('tab-technical')">Lỗi hình học &amp; Ngữ nghĩa</button>
+        <button class="tab-btn" onclick="switchTab('tab-workflow')">Agent Flow Log</button>
+      </div>
+
+      <div class="tab-content-wrapper">
+        
+        <!-- Tab 1: Critique -->
+        <div class="tab-content active" id="tab-critique">
+          <div id="critiqueEmpty" style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding-top: 40px;">
+            Chưa có dữ liệu phân tích. Hãy upload ảnh thiết kế để bắt đầu.
+          </div>
+          
+          <div id="critiqueContent" style="display:none">
+            <div class="critic-title">✨ Tổng quan Nhận xét (Critic Review)</div>
+            <div class="critique-summary-box" id="critiqueSummary"></div>
+            
+            <div class="critic-title" style="margin-top: 24px;">📝 Phân tích Chi tiết &amp; Đề xuất sửa</div>
+            <div id="critiqueDetailsList"></div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Technical issues -->
+        <div class="tab-content" id="tab-technical">
+          <div id="technicalEmpty" style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding-top: 40px;">
+            Chưa có dữ liệu lỗi.
+          </div>
+
+          <div id="technicalContent" style="display:none">
+            <div class="error-category-title">⚠️ Danh sách lỗi đo lường thực tế (0% Hallucination)</div>
+            <div class="errors-container" id="errorsList"></div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Workflow timeline -->
+        <div class="tab-content" id="tab-workflow">
+          <div class="agent-timeline">
+            
+            <div class="timeline-node" id="node-1a">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-title">Agent 1A — Florence-2 (Local)</div>
+                <div class="timeline-desc" id="desc-1a">Chờ tải lên ảnh...</div>
+              </div>
+            </div>
+
+            <div class="timeline-node" id="node-1b">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-title">Agent 1B — OWL-ViT (Local)</div>
+                <div class="timeline-desc" id="desc-1b">Chờ tải lên ảnh...</div>
+              </div>
+            </div>
+
+            <div class="timeline-node" id="node-wbf">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-title">Consensus Filter — WBF / IoU Voting</div>
+                <div class="timeline-desc" id="desc-wbf">Tính toán độ đồng thuận và loại bỏ bounding box lệch nhau.</div>
+              </div>
+            </div>
+
+            <div class="timeline-node" id="node-l2">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-title">Tầng 2 — Specialized Rules (Toán học &amp; Logic)</div>
+                <div class="timeline-desc" id="desc-l2">Chạy song song: Alignment check (Gióng hàng), Spacing check (Lưới 8pt), Contrast check (Edge-Guided Seeding) &amp; Semantic checks.</div>
+              </div>
+            </div>
+
+            <div class="timeline-node" id="node-critic">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-title">Agent 3 — LLM Critic (Qwen / Grok)</div>
+                <div class="timeline-desc" id="desc-critic">So khớp lỗi đo lường kỹ thuật với quy tắc thiết kế RAG để tạo lời giải thích UX tự nhiên.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Panel Footer Actions -->
+      <div class="pane-footer">
+        <button id="exportMarkdownBtn" disabled onclick="exportReport('markdown')">Xuất Markdown</button>
+        <button id="exportJsonBtn" disabled onclick="exportReport('json')">Xuất JSON</button>
+        <button class="primary" id="remixBtn" disabled onclick="sendToRemix()">🧙 Gửi sang Willa AI (Fix &amp; Chat)</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Radar Scanner Loader Modal -->
+  <div class="loader-overlay" id="loaderOverlay">
+    <div class="radar-scanner">
+      <div class="radar-line"></div>
+    </div>
+    <div class="loader-text">Đang phân tích X-Quang Thiết Kế...</div>
+    <div class="loader-subtext" id="loaderSubtext">Đang khởi chạy Tầng 1 local models...</div>
+  </div>
+
+  <script>
+    let auditData = null;
+    let selectedBox = null;
+    let activeLayer = 'consensus'; // 'consensus' or 'errors'
+    let imageObj = new Image();
+
+    // Steps text updates for loader
+    const loaderSteps = [
+      "Đang khởi chạy Agent 1A Florence-2 (visual grounding)...",
+      "Đang khởi chạy Agent 1B OWL-ViT (open-vocab UI components)...",
+      "Mô hình đang chạy local trên CPU, vui lòng đợi trong giây lát...",
+      "Đang lọc Consensus qua thuật toán IoU Voting...",
+      "Đang chạy Agent 2A Geometric Auditor (đo khoảng cách, contrast ratio)...",
+      "Đang chạy Agent 2B Semantic Checker (phân tích ngữ nghĩa nhãn nút)...",
+      "Truy vấn Vector DB RAG tìm quy tắc thiết kế liên quan...",
+      "Đang gọi Agent 3 LLM Critic để viết báo cáo UX..."
+    ];
+    let loaderInterval = null;
+
+    function startLoaderAnimation() {
+      document.getElementById('loaderOverlay').style.display = 'flex';
+      let idx = 0;
+      document.getElementById('loaderSubtext').innerText = loaderSteps[0];
+      loaderInterval = setInterval(() => {
+        idx = (idx + 1) % loaderSteps.length;
+        document.getElementById('loaderSubtext').innerText = loaderSteps[idx];
+      }, 3000);
+    }
+
+    function stopLoaderAnimation() {
+      clearInterval(loaderInterval);
+      document.getElementById('loaderOverlay').style.display = 'none';
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('sourceImage').src = evt.target.result;
+        imageObj.src = evt.target.result;
+        imageObj.onload = function() {
+          // Hide dropzone, show canvas container and toolbar
+          document.getElementById('dropzone').style.display = 'none';
+          document.getElementById('canvasContainer').style.display = 'block';
+          document.getElementById('visualizerToolbar').style.display = 'flex';
+          
+          initCanvas();
+          uploadAndAnalyze(file);
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function initCanvas() {
+      const canvas = document.getElementById('overlayCanvas');
+      const img = document.getElementById('sourceImage');
+      canvas.width = img.clientWidth;
+      canvas.height = img.clientHeight;
+      canvas.style.width = img.clientWidth + 'px';
+      canvas.style.height = img.clientHeight + 'px';
+      
+      // Handle window resize dynamically
+      window.onresize = function() {
+        if (!auditData) return;
+        canvas.width = img.clientWidth;
+        canvas.height = img.clientHeight;
+        canvas.style.width = img.clientWidth + 'px';
+        canvas.style.height = img.clientHeight + 'px';
+        drawOverlays();
+      };
+      
+      canvas.addEventListener('click', handleCanvasClick);
+    }
+
+    function uploadAndAnalyze(file) {
+      startLoaderAnimation();
+      
+      // Update Agent timelines to running
+      setTimelineNodeStatus('node-1a', 'running', 'Florence-2 đang dò quét...');
+      setTimelineNodeStatus('node-1b', 'running', 'OWL-ViT đang quét open-vocabulary...');
+      setTimelineNodeStatus('node-wbf', 'waiting', 'Đợi kết quả Tầng 1...');
+      setTimelineNodeStatus('node-l2', 'waiting', 'Đợi kết quả WBF...');
+      setTimelineNodeStatus('node-critic', 'waiting', 'Đợi kết quả Tầng 2...');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('session_id', 'ux_audit_session_' + Date.now());
+      formData.append('lang', 'vi');
+
+      fetch('/ux-audit', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("API error status code " + res.status);
+        return res.json();
+      })
+      .then(data => {
+        stopLoaderAnimation();
+        if (data.success) {
+          auditData = data;
+          renderAuditResults();
+        } else {
+          alert("Không thể thực hiện UX Audit: " + data.message);
+        }
+      })
+      .catch(err => {
+        stopLoaderAnimation();
+        console.error(err);
+        alert("Lỗi kết nối tới server: " + err.message);
+        
+        // Reset states
+        setTimelineNodeStatus('node-1a', 'default', 'Lỗi kết nối');
+        setTimelineNodeStatus('node-1b', 'default', 'Lỗi kết nối');
+      });
+    }
+
+    function setTimelineNodeStatus(id, status, descText) {
+      const node = document.getElementById(id);
+      const desc = document.getElementById('desc-' + id.split('-')[1]);
+      
+      node.classList.remove('done', 'running', 'waiting');
+      if (status === 'done') {
+        node.classList.add('done');
+      } else if (status === 'running') {
+        node.classList.add('running');
+      } else if (status === 'waiting') {
+        node.classList.add('waiting');
+      }
+      
+      if (descText) desc.innerText = descText;
+    }
+
+    function renderAuditResults() {
+      // 1. Update Timeline Log
+      setTimelineNodeStatus('node-1a', 'done', `Đã phát hiện ${auditData.detected_elements.filter(e => !e.label.startsWith("text:")).length} components & ${auditData.detected_elements.filter(e => e.label.startsWith("text:")).length} text regions.`);
+      setTimelineNodeStatus('node-1b', 'done', `Đã định vị các UI component với OWL-ViT.`);
+      setTimelineNodeStatus('node-wbf', 'done', `Đã chọn lọc ${auditData.detected_elements.length} components đạt consensus.`);
+      
+      const geomCount = auditData.errors.filter(e => e.g === 'color_theory' || e.g === 'layout_rules').length;
+      const semCount = auditData.errors.length - geomCount;
+      setTimelineNodeStatus('node-l2', 'done', `Hoàn thành: ${geomCount} lỗi hình học & ${semCount} lỗi ngữ nghĩa được báo cáo.`);
+      setTimelineNodeStatus('node-critic', 'done', `Đã tạo phê bình UX chi tiết dựa trên RAG rules.`);
+
+      // 2. Render Canvas Overlays
+      drawOverlays();
+
+      // 3. Render Critique Tab
+      document.getElementById('critiqueEmpty').style.display = 'none';
+      document.getElementById('critiqueContent').style.display = 'block';
+      document.getElementById('critiqueSummary').innerText = auditData.summary;
+      
+      const detailsList = document.getElementById('critiqueDetailsList');
+      detailsList.innerHTML = '';
+      auditData.details.forEach((det, index) => {
+        const card = document.createElement('div');
+        card.className = 'critique-detail-card';
+        card.id = `critique-card-${index}`;
+        card.onclick = () => selectBoxAndZoom(det.box_2d, 'critique-card-' + index);
+        
+        card.innerHTML = `
+          <div class="critique-detail-violation">⚠️ Vi phạm: ${det.guideline_violation}</div>
+          <div class="critique-detail-issue">${det.issue}</div>
+          <div class="critique-detail-desc">${det.ux_explanation}</div>
+          <div class="critique-detail-fix">💡 Gợi ý sửa: ${det.fix_recommendation}</div>
+        `;
+        detailsList.appendChild(card);
+      });
+
+      // 4. Render Technical Errors Tab
+      document.getElementById('technicalEmpty').style.display = 'none';
+      document.getElementById('technicalContent').style.display = 'block';
+      
+      const errorsList = document.getElementById('errorsList');
+      errorsList.innerHTML = '';
+      auditData.errors.forEach((err, index) => {
+        const card = document.createElement('div');
+        card.className = `error-card ${err.s}`;
+        card.id = `err-card-${index}`;
+        card.onclick = () => selectBoxAndZoom(err.c, 'err-card-' + index);
+        
+        card.innerHTML = `
+          <div class="error-card-header">
+            <span class="error-tag ${err.s}">${err.s}</span>
+            <span class="error-cat-badge">${err.g}</span>
+          </div>
+          <div class="error-text">${err.r}</div>
+        `;
+        errorsList.appendChild(card);
+      });
+
+      // 5. Enable Buttons
+      document.getElementById('exportMarkdownBtn').removeAttribute('disabled');
+      document.getElementById('exportJsonBtn').removeAttribute('disabled');
+      document.getElementById('remixBtn').removeAttribute('disabled');
+
+      // Switch to Critique tab initially
+      switchTab('tab-critique');
+    }
+
+    function drawOverlays() {
+      const canvas = document.getElementById('overlayCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!auditData) return;
+
+      const items = activeLayer === 'consensus' ? auditData.detected_elements : auditData.errors;
+      
+      items.forEach(item => {
+        const box = activeLayer === 'consensus' ? item.box_2d : item.c;
+        const x1 = (box[0] / 1000) * canvas.width;
+        const y1 = (box[1] / 1000) * canvas.height;
+        const x2 = (box[2] / 1000) * canvas.width;
+        const y2 = (box[3] / 1000) * canvas.height;
+
+        const isSelected = selectedBox && 
+                           Math.abs(selectedBox[0] - box[0]) < 2 && 
+                           Math.abs(selectedBox[1] - box[1]) < 2;
+
+        if (isSelected) {
+          ctx.strokeStyle = '#f43f5e';
+          ctx.lineWidth = 4;
+          ctx.fillStyle = 'rgba(244, 63, 94, 0.15)';
+        } else {
+          ctx.strokeStyle = activeLayer === 'consensus' ? '#8b5cf6' : '#f59e0b';
+          ctx.lineWidth = 2;
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.02)';
+        }
+
+        ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+        // Draw label text
+        if (activeLayer === 'consensus') {
+          ctx.fillStyle = '#8b5cf6';
+          ctx.font = '10px Outfit';
+          ctx.fillText(item.label.substring(0, 20), x1, y1 - 4);
+        }
+      });
+    }
+
+    function handleCanvasClick(e) {
+      if (!auditData) return;
+      
+      const canvas = document.getElementById('overlayCanvas');
+      const rect = canvas.getBoundingClientRect();
+      const clickX = ((e.clientX - rect.left) / canvas.width) * 1000;
+      const clickY = ((e.clientY - rect.top) / canvas.height) * 1000;
+
+      // Find if clicked inside any box
+      const items = activeLayer === 'consensus' ? auditData.detected_elements : auditData.errors;
+      let foundBox = null;
+      let minArea = Infinity;
+
+      items.forEach(item => {
+        const box = activeLayer === 'consensus' ? item.box_2d : item.c;
+        if (clickX >= box[0] && clickX <= box[2] && clickY >= box[1] && clickY <= box[3]) {
+          const area = (box[2] - box[0]) * (box[3] - box[1]);
+          if (area < minArea) {
+            minArea = area;
+            foundBox = box;
+          }
+        }
+      });
+
+      if (foundBox) {
+        selectedBox = foundBox;
+        drawOverlays();
+        highlightResultCard(foundBox);
+      }
+    }
+
+    function selectBoxAndZoom(box, cardId) {
+      selectedBox = box;
+      drawOverlays();
+
+      // Highlight target card
+      document.querySelectorAll('.error-card, .critique-detail-card').forEach(c => c.classList.remove('selected'));
+      const card = document.getElementById(cardId);
+      if (card) {
+        card.classList.add('selected');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function highlightResultCard(box) {
+      if (activeLayer === 'consensus') return;
+
+      // Find matching error card
+      const errIdx = auditData.errors.findIndex(err => err.c === box);
+      if (errIdx !== -1) {
+        switchTab('tab-technical');
+        selectBoxAndZoom(box, `err-card-${errIdx}`);
+        return;
+      }
+
+      // Find matching critique detail card
+      const critIdx = auditData.details.findIndex(det => det.box_2d === box);
+      if (critIdx !== -1) {
+        switchTab('tab-critique');
+        selectBoxAndZoom(box, `critique-card-${critIdx}`);
+      }
+    }
+
+    function toggleLayer(layerName) {
+      activeLayer = layerName;
+      document.getElementById('toggleConsensus').classList.toggle('active', layerName === 'consensus');
+      document.getElementById('toggleErrors').classList.toggle('active', layerName === 'errors');
+      drawOverlays();
+    }
+
+    function clearCanvasZoom() {
+      selectedBox = null;
+      drawOverlays();
+      document.querySelectorAll('.error-card, .critique-detail-card').forEach(c => c.classList.remove('selected'));
+    }
+
+    function exportReport(format) {
+      if (!auditData) return;
+
+      let filename = `WillaAI_UX_Audit_Report.${format === 'json' ? 'json' : 'md'}`;
+      let content = '';
+
+      if (format === 'json') {
+        content = JSON.stringify(auditData, null, 2);
+      } else {
+        content = auditData.markdown_report;
+      }
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function sendToRemix() {
+      // Direct user back to main chat loaded with audit context
+      window.location.href = '/?mode=audit_fix';
+    }
+  </script>
+</body>
+</html>

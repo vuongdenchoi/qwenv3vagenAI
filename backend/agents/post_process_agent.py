@@ -130,7 +130,7 @@ class PostProcessAgent:
                     new_severity = "critical" if ratio < 3.0 else "major"
 
             entry = {
-                "c": [x1, y1, x2, y2],
+                "c": grid if grid is not None else [x1, y1, x2, y2],
                 "r": new_reason,
                 "issue": strip_box_tags(issue),
                 "suggestion": strip_box_tags(suggestion),
@@ -140,6 +140,7 @@ class PostProcessAgent:
             }
             if grid is not None:
                 entry["c_grid"] = grid
+                entry["c_pixel"] = [x1, y1, x2, y2]
             pending.append((entry, copy.deepcopy(err)))
 
         severity_priority = {"critical": 0, "major": 1, "minor": 2}

@@ -33,22 +33,30 @@ from box_coordinates import (
     resolve_best_box_pixel,
 )
 
-# Patch requests and ssl to bypass SSL verification globally (fixes Aliyun DashScope SSL handshake issue on Windows)
-import ssl
-_original_create_default_context = ssl.create_default_context
-def _patched_create_default_context(*args, **kwargs):
-    context = _original_create_default_context(*args, **kwargs)
-    context.check_hostname = False
-    context.verify_mode = ssl.CERT_NONE
-    return context
-ssl.create_default_context = _patched_create_default_context
-ssl._create_default_https_context = ssl._create_unverified_context
+# Patch requests and ssl to bypass SSL verification globally (disabled as it breaks on this system)
+# import ssl
+# _original_create_default_context = ssl.create_default_context
+# def _patched_create_default_context(*args, **kwargs):
+#     context = _original_create_default_context(*args, **kwargs)
+#     context.check_hostname = False
+#     context.verify_mode = ssl.CERT_NONE
+#     return context
+# ssl.create_default_context = _patched_create_default_context
+# ssl._create_default_https_context = ssl._create_unverified_context
+# 
+# _original_request = requests.Session.request
+# def _patched_request(self, method, url, *args, **kwargs):
+#     kwargs['verify'] = False
+#     return _original_request(self, method, url, *args, **kwargs)
+# requests.Session.request = _patched_request
+# 
+# # Patch urllib3 to bypass SSL verification globally
+# try:
+#     import urllib3.util.ssl_
+#     urllib3.util.ssl_.create_urllib3_context = lambda *args, **kwargs: ssl._create_unverified_context()
+# except Exception as e:
+#     print(f"[WARNING] Failed to patch urllib3: {e}")
 
-_original_request = requests.Session.request
-def _patched_request(self, method, url, *args, **kwargs):
-    kwargs['verify'] = False
-    return _original_request(self, method, url, *args, **kwargs)
-requests.Session.request = _patched_request
 
 
 from agents.design_check_agent import DesignCheckAgent
@@ -166,6 +174,23 @@ def get_router_reply_lang() -> str:
     return "vi"
 
 
+def is_vietnamese(text: str) -> bool:
+    vietnamese_chars = set("àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệđìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆĐÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ")
+    return any(char in vietnamese_chars for char in text)
+
+
+def detect_feedback_language(msg: str) -> str:
+    lang_mode = get_router_reply_lang()
+    if lang_mode == "vi":
+        return "vi"
+    elif lang_mode == "en":
+        return "en"
+    else:  # auto
+        if msg and is_vietnamese(msg):
+            return "vi"
+        return "en"
+
+
 def router_language_instruction() -> str:
     lang = get_router_reply_lang()
     if lang == "en":
@@ -262,6 +287,17 @@ async def serve_element_layer():
         )
     return {"message": "Element layer page not found"}
 
+@app.get("/ux-audit-ui")
+async def serve_ux_audit_ui():
+    ux_audit_html = FRONTEND_DIR / "ux-audit.html"
+    if ux_audit_html.exists():
+        return FileResponse(
+            str(ux_audit_html),
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
+        )
+    return {"message": "UX Audit page not found"}
+
+
 @app.get("/live-demo")
 async def serve_live_demo():
     live_demo_html = FRONTEND_DIR / "live-demo.html"
@@ -313,6 +349,102 @@ async def estimate_tokens(
     result = estimate_phase3(img_data, user_message=message or "", extra_text=persona_context or "")
     result["image_count"] = 1
     return result
+
+
+@app.post("/ux-audit")
+async def ux_audit(
+    file: UploadFile = File(...),
+    session_id: Optional[str] = Form(""),
+    lang: Optional[str] = Form("vi"),
+    persona_context: Optional[str] = Form(None)
+):
+    """
+    Endpoint thực hiện Hybrid Multi-Agent UX Audit.
+    Tầng 1: Florence-2/OWL-ViT local.
+    Tầng 2: Spacing/Alignment/Contrast.
+    Tầng 3: LLM Critic.
+    """
+    if file is None or not file.filename:
+        raise HTTPException(status_code=400, detail="Vui lòng cung cấp file ảnh thiết kế.")
+    
+    img_data = await file.read()
+    if len(img_data) == 0:
+        raise HTTPException(status_code=400, detail="File ảnh rỗng.")
+        
+    try:
+        img = Image.open(io.BytesIO(img_data))
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        MAX_SIZE = 1536
+        if img.width > MAX_SIZE or img.height > MAX_SIZE:
+            img.thumbnail((MAX_SIZE, MAX_SIZE), Image.Resampling.LANCZOS)
+            out_buf = io.BytesIO()
+            img.save(out_buf, format="JPEG", quality=85)
+            img_data = out_buf.getvalue()
+            print(f"[UX Audit API] Đã scale ảnh xuống {img.width}x{img.height}.")
+            img = Image.open(io.BytesIO(img_data))
+    except Exception as e:
+        print(f"[UX Audit API] Lỗi xử lý/scale ảnh: {e}")
+        
+    try:
+        persona_dict = parse_persona(persona_context)
+        if persona_dict:
+            patterns = persona_dict.get("designPatterns", {})
+            recent_count = patterns.get("recentAnalysisCount", 0)
+            cats = len(patterns.get("topIssueCategories", []))
+            print(f"[UX Audit API] Loaded persona context: recentAnalysisCount={recent_count}, categoriesCount={cats}")
+            
+        agent = get_agent()
+        result = agent.run_ux_audit(img_data, lang=lang, persona_context=persona_dict)
+        
+        # Tương thích ngược với hệ thống session/zoom
+        key = session_id.strip() if session_id else "anonymous"
+        legacy_errors = []
+        for idx, err in enumerate(result["errors"]):
+            grid_box = err["c"]
+            pixel_box = grid_to_pixel_xyxy(grid_box, img.width, img.height)
+            if not pixel_box:
+                x1 = int(grid_box[0] / 1000.0 * img.width)
+                y1 = int(grid_box[1] / 1000.0 * img.height)
+                x2 = int(grid_box[2] / 1000.0 * img.width)
+                y2 = int(grid_box[3] / 1000.0 * img.height)
+                pixel_box = [x1, y1, x2, y2]
+            legacy_errors.append({
+                "c": pixel_box,
+                "c_grid": grid_box,
+                "r": err["r"],
+                "s": err["s"],
+                "g": err["g"],
+                "id": idx
+            })
+            
+        legacy_result = {
+            "e": legacy_errors,
+            "te": len(legacy_errors),
+            "isz": {"w": img.width, "h": img.height},
+            "coord_space": COORD_FRAME_PIXEL,
+            "ss": {
+                "minor": sum(1 for e in legacy_errors if e["s"] == "minor"),
+                "major": sum(1 for e in legacy_errors if e["s"] == "major"),
+                "critical": sum(1 for e in legacy_errors if e["s"] == "critical")
+            }
+        }
+        memory_store.set_last_analysis(key, img_data, legacy_result)
+        
+        return {
+            "success": True,
+            "errors": result["errors"],
+            "detected_elements": result["detected_elements"],
+            "summary": result["summary"],
+            "details": result["details"],
+            "markdown_report": result["markdown_report"],
+            "image_size": {"w": img.width, "h": img.height}
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống trong quá trình UX Audit: {str(e)}")
+
 
 
 def extract_user_context(user_text: str) -> Tuple[bool, Dict[str, Optional[str]]]:
@@ -774,15 +906,52 @@ async def unified_chat(
                 # Chạy thẳng Phase 3 critique (không chạy Phase 2A/2B ngầm).
                 # -----------------------------------------------------------
                 query_str = "graphic design poster advertisement"
-                print(f"[Upload] Đang chạy phân tích trực quan ban đầu với query: '{query_str}'...")
+                print(f"[Upload] Đang chạy phân tích trực quan ban đầu bằng luồng Willa Multi-Agent với query: '{query_str}'...")
                 agent = get_agent()
-                result = agent.analyze(
-                    image_bytes=img_data,
-                    filename="image.jpg",
-                    query=query_str,
-                    confirmed_context=None,
-                    persona_context=persona_dict
-                )
+                actual_lang = detect_feedback_language(msg)
+                
+                # Chạy Multi-Agent UX Audit thay cho Single Agent cũ
+                audit_result = agent.run_ux_audit(img_data, lang=actual_lang, persona_context=persona_dict)
+                
+                # Chuyển đổi kết quả sang format (legacy_result) để tương thích UI Chat
+                legacy_errors = []
+                for idx, err in enumerate(audit_result.get("errors", [])):
+                    grid_box = err.get("c", [0, 0, 0, 0])
+                    pixel_box = grid_to_pixel_xyxy(grid_box, img.width, img.height)
+                    if not pixel_box:
+                        x1 = int(grid_box[0] / 1000.0 * img.width)
+                        y1 = int(grid_box[1] / 1000.0 * img.height)
+                        x2 = int(grid_box[2] / 1000.0 * img.width)
+                        y2 = int(grid_box[3] / 1000.0 * img.height)
+                        pixel_box = [x1, y1, x2, y2]
+                    legacy_errors.append({
+                        "c": pixel_box,
+                        "c_grid": grid_box,
+                        "r": err.get("r", ""),
+                        "s": err.get("s", "minor"),
+                        "g": err.get("g", "general"),
+                        "id": idx,
+                        "issue": err.get("issue", ""),
+                        "suggestion": err.get("suggestion", "")
+                    })
+                    
+                result = {
+                    "e": legacy_errors,
+                    "te": len(legacy_errors),
+                    "isz": {"w": img.width, "h": img.height},
+                    "coord_space": COORD_FRAME_PIXEL,
+                    "ss": {
+                        "minor": sum(1 for e in legacy_errors if e["s"] == "minor"),
+                        "major": sum(1 for e in legacy_errors if e["s"] == "major"),
+                        "critical": sum(1 for e in legacy_errors if e["s"] == "critical")
+                    },
+                    "compliments": audit_result.get("compliments", []),
+                    "errors": audit_result.get("errors", []),
+                    "detected_elements": audit_result.get("detected_elements", []),
+                    "markdown_report": audit_result.get("markdown_report", ""),
+                    "details": audit_result.get("details", [])
+                }
+                
                 if "e" in result and isinstance(result["e"], list):
                     severity_weight = {"critical": 3, "major": 2, "minor": 1}
                     result["e"].sort(key=lambda x: severity_weight.get(x.get("s", "minor"), 0), reverse=True)
@@ -818,15 +987,15 @@ async def unified_chat(
                 compliments = result.get("compliments", [])
                 compliments_text = ""
                 if compliments:
-                    compliments_text = "✨ Design Highlights:\n"
+                    compliments_text = "Design Highlights:\n"
                     for c in compliments:
-                        compliments_text += f"💚 {c}\n"
+                        compliments_text += f"- {c}\n"
                     compliments_text += "\n"
 
                 error_count = result.get("te", 0)
                 error_list_text = ""
                 if error_count > 0:
-                    error_list_text = "⚠️ Key Issues to Address:\n"
+                    error_list_text = "Key Issues to Address:\n"
                     for err in result.get("e", [])[:3]:
                         issue = err.get("issue") or err.get("r", "")
                         issue = (issue[:100] + "...") if len(issue) > 100 else issue
@@ -834,12 +1003,13 @@ async def unified_chat(
                     error_list_text += "\n"
                 
                 final_reply = (
-                    f"Welcome to Willa AI! 🚀\n\n"
+                    f"Welcome to Willa AI!\n"
+                    f"Tôi là Willa Multi-Agent, trợ lý đánh giá thiết kế chuyên sâu.\n\n"
                     f"{compliments_text}"
-                    f"💡 I detected **{error_count}** visual critique issues that can be improved.\n"
+                    f"Tôi đã phát hiện {error_count} lỗi thiết kế (visual critique issues).\n"
                     f"{error_list_text}"
-                    "You can view highlighted error bounding boxes directly on the image.\n\n"
-                    "👉 If you want to analyze contextual suitability across **8 dimensions of Rubic**, ask me by using keywords like: **\"context\"** or **\"Rubic\"**!"
+                    "Bạn có thể xem các khung đỏ đánh dấu lỗi trực tiếp trên ảnh.\n\n"
+                    "Nếu bạn muốn phân tích sâu hơn về bối cảnh (Context), hãy nhập: \"context\" hoặc \"Rubic\"!"
                 )
                 memory_store.add_turn(key, "assistant", final_reply)
                 return {
@@ -1108,10 +1278,23 @@ async def unified_chat(
                         
                 if isinstance(box, list) and len(box) == 4:
                     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-                    x1 = int(box[0] / 1000.0 * img.width)
-                    y1 = int(box[1] / 1000.0 * img.height)
-                    x2 = int(box[2] / 1000.0 * img.width)
-                    y2 = int(box[3] / 1000.0 * img.height)
+                    cs = last_result.get("coord_space") if last_result else ""
+                    pixel_box = _box_to_pixel_xyxy(
+                        box,
+                        img.width,
+                        img.height,
+                        ref_w=(last_result.get("isz") or {}).get("w") if last_result else img.width,
+                        ref_h=(last_result.get("isz") or {}).get("h") if last_result else img.height,
+                        coord_space=cs,
+                        force_pixel=(cs == COORD_FRAME_PIXEL)
+                    )
+                    if pixel_box:
+                        x1, y1, x2, y2 = pixel_box
+                    else:
+                        x1 = int(box[0] / 1000.0 * img.width)
+                        y1 = int(box[1] / 1000.0 * img.height)
+                        x2 = int(box[2] / 1000.0 * img.width)
+                        y2 = int(box[3] / 1000.0 * img.height)
                     
                     x1, x2 = min(x1, x2), max(x1, x2)
                     y1, y2 = min(y1, y2), max(y1, y2)
@@ -1268,12 +1451,14 @@ async def unified_chat(
                     print(f"[Phase-12 OK] Đang chạy lại critique với query: '{query_str}'...")
                     
                     agent = get_agent()
+                    actual_lang = detect_feedback_language(msg)
                     result = agent.analyze(
                         image_bytes=ag_image,
                         filename="image.jpg",
                         query=query_str,
                         confirmed_context=ag_context,
-                        persona_context=persona_dict
+                        persona_context=persona_dict,
+                        lang=actual_lang
                     )
                     
                     if "e" in result and isinstance(result["e"], list):
@@ -1420,12 +1605,14 @@ async def unified_chat(
                         print(f"Đang chạy lại critique với query: '{query_str}'...")
                         
                         agent = get_agent()
+                        actual_lang = detect_feedback_language(msg)
                         result = agent.analyze(
                             image_bytes=ag_image,
                             filename="image.jpg",
                             query=query_str,
                             confirmed_context=ag_context,
-                            persona_context=persona_dict
+                            persona_context=persona_dict,
+                            lang=actual_lang
                         )
                         
                         if "e" in result and isinstance(result["e"], list):
