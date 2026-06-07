@@ -768,7 +768,8 @@ async def unified_chat(
     action_type: Optional[str] = Form(""), # e.g. "zoom"
     error_index: Optional[int] = Form(None),
     box_2d: Optional[str] = Form("[]"),
-    persona_context: Optional[str] = Form(None)
+    persona_context: Optional[str] = Form(None),
+    lang: Optional[str] = Form("vi")
 ):
     """
     Cổng API hợp nhất (Unified endpoint) thay thế cho /analyze, /chat và /zoom.
@@ -908,7 +909,7 @@ async def unified_chat(
                 query_str = "graphic design poster advertisement"
                 print(f"[Upload] Đang chạy phân tích trực quan ban đầu bằng luồng Willa Multi-Agent với query: '{query_str}'...")
                 agent = get_agent()
-                actual_lang = detect_feedback_language(msg)
+                actual_lang = lang if lang else detect_feedback_language(msg)
                 
                 # Chạy Multi-Agent UX Audit thay cho Single Agent cũ
                 audit_result = agent.run_ux_audit(img_data, lang=actual_lang, persona_context=persona_dict)
@@ -1451,7 +1452,7 @@ async def unified_chat(
                     print(f"[Phase-12 OK] Đang chạy lại critique với query: '{query_str}'...")
                     
                     agent = get_agent()
-                    actual_lang = detect_feedback_language(msg)
+                    actual_lang = lang if lang else detect_feedback_language(msg)
                     result = agent.analyze(
                         image_bytes=ag_image,
                         filename="image.jpg",
@@ -1605,7 +1606,7 @@ async def unified_chat(
                         print(f"Đang chạy lại critique với query: '{query_str}'...")
                         
                         agent = get_agent()
-                        actual_lang = detect_feedback_language(msg)
+                        actual_lang = lang if lang else detect_feedback_language(msg)
                         result = agent.analyze(
                             image_bytes=ag_image,
                             filename="image.jpg",
