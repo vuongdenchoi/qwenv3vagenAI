@@ -514,7 +514,7 @@ def run_antigraviti_phase_2a(image_bytes: bytes, mime_type: str = "image/jpeg", 
     """
     Chạy Phase 2A: Quét hình ảnh bằng Vision API để phân tích 8 chiều bối cảnh + đặc tính trực quan
     """
-    lang_req = "You must output all text values in Vietnamese (Tiếng Việt)." if lang == "vi" else "You must output all text values in English."
+    lang_req = "You MUST output all text values in Vietnamese (Tiếng Việt)." if lang == "vi" else "CRITICAL: You MUST write all output strings entirely in English. Do NOT use Vietnamese under any circumstances, even if the JSON keys are in Vietnamese."
     system_prompt = (
         "You are a visual context analyzer for design critique. "
         "Analyze the uploaded image strictly along these 8 dimensions and extract visual style traits. "
@@ -587,10 +587,12 @@ def run_antigraviti_phase_2b(
     else:
         rag_results_text = "No reference documents found in the knowledge base."
 
+    lang_req_sp = "Answer in Vietnamese." if lang == "vi" else "CRITICAL: You MUST answer entirely in English. ABSOLUTELY NO VIETNAMESE."
     system_prompt = (
         "You are a senior design critic. Re-analyze this design image and produce a refined, enriched analysis across 8 dimensions. "
         "Flag any CONFLICTS between the design's visual language and its stated/detected context. "
         "Rate contextual coherence on a scale of 1-10 for each dimension.\n\n"
+        f"{lang_req_sp}\n\n"
         "Analyze strictly across these 8 dimensions:\n"
         "1. Time (thoi_gian)\n"
         "2. Location (dia_diem)\n"
@@ -633,7 +635,7 @@ def run_antigraviti_phase_2b(
         '  "coherence_total": 8.2\n'
         "}\n\n"
         "Note:\n"
-        f"- You MUST write the 'analysis' fields and 'conflicts' strings entirely in {'Vietnamese (Tiếng Việt)' if lang == 'vi' else 'English'}.\n"
+        f"- CRITICAL INSTRUCTION: You MUST write the 'analysis' fields and 'conflicts' strings entirely in {'Vietnamese (Tiếng Việt)' if lang == 'vi' else 'English. Do NOT use Vietnamese under any circumstances, even if the RAG references or JSON keys are in Vietnamese'}.\n"
         "- Each score must be an integer between 1 and 10.\n"
         "- coherence_total is the overall coherence score (float between 1.0 and 10.0).\n"
         "- If there are no conflicts, conflicts must be an empty list []."
