@@ -702,7 +702,7 @@ def format_antigraviti_report(analysis_result: dict, lang: str = "vi") -> str:
             score = 0
             
         report += f"{label}\n"
-        report += f"[Analysis] {analysis}\n\n"
+        report += f"➤ {analysis}\n\n"
         
     report += "───────────────────────────────────────────────\n"
     conflicts = analysis_result.get("conflicts", [])
@@ -1120,12 +1120,20 @@ async def unified_chat(
                 # Thiết lập phase = 10 để lượt tiếp theo xử lý thu thập bối cảnh
                 memory_store.set_antigraviti_state(key, phase=10, image=image_bytes)
                 
-                reply = (
-                    "Awesome! Let's analyze the suitability of this design using **8 dimensions of Rubic** context! 🎯\n\n"
-                    "Could you share some details about your design context?\n"
-                    "*(For example: time period, location, cultural context, art style, economic segment, print or digital medium...)*\n\n"
-                    "→ Or reply **\"AI tự phát hiện\"** (or **\"AI detect\"**) to let me automatically analyze the context from your image!"
-                )
+                if actual_lang == "vi":
+                    reply = (
+                        "Tuyệt vời! Hãy cùng phân tích độ phù hợp của thiết kế này qua **8 chiều bối cảnh Rubic** nhé! 🎯\n\n"
+                        "Bạn có thể chia sẻ thêm một số thông tin về bối cảnh thiết kế không?\n"
+                        "*(Ví dụ: thời gian, địa điểm, văn hóa, phong cách nghệ thuật, tệp khách hàng, ấn phẩm in ấn hay kỹ thuật số...)*\n\n"
+                        "→ Hoặc trả lời **\"AI tự phát hiện\"** để mình tự động phân tích bối cảnh từ ảnh của bạn!"
+                    )
+                else:
+                    reply = (
+                        "Awesome! Let's analyze the suitability of this design using **8 dimensions of Rubic** context! 🎯\n\n"
+                        "Could you share some details about your design context?\n"
+                        "*(For example: time period, location, cultural context, art style, economic segment, print or digital medium...)*\n\n"
+                        "→ Or reply **\"AI detect\"** to let me automatically analyze the context from your image!"
+                    )
                 memory_store.add_turn(key, "assistant", reply)
                 return {
                     "type": "chat",
