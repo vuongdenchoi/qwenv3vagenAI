@@ -208,6 +208,51 @@ def router_language_instruction() -> str:
         "(Vietnamese user message -> Vietnamese reply, English user message -> English reply)."
     )
 
+def classify_image_type(image_bytes: bytes) -> dict:
+    import base64
+    import json
+    import os
+    import requests
+    
+    api_key = os.getenv("DASHSCOPE_API_KEY", "")
+    if not api_key:
+        return {"type": "design", "confidence": 1.0, "signals": []}
+        
+    encoded = base64.b64encode(image_bytes).decode('utf-8')
+    prompt = 'You are an image classifier.\n\nAnalyze the image and classify it as ONE of:\n- "photo": a real photograph taken with a camera (people, nature, food, objects, etc.)\n- "design": a graphic design file (poster, banner, logo, UI mockup, infographic, illustration)\n\nRespond ONLY with this JSON, no markdown, no explanation:\n{\n  "type": "photo" | "design",\n  "confidence": 0.0-1.0,\n  "signals": ["signal1", "signal2", "signal3"]\n}'
+    
+    payload = {
+        "model": "qwen-vl-plus",
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded}"}},
+                {"type": "text", "text": prompt}
+            ]
+        }],
+        "max_tokens": 200
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        resp = requests.post("https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions", headers=headers, json=payload, timeout=60)
+        if resp.ok:
+            data = resp.json()
+            raw = data["choices"][0]["message"]["content"]
+            if "```" in raw:
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            return json.loads(raw.strip())
+    except Exception as e:
+        print(f"[ClassifyImage] Error: {e}")
+    
+    return {"type": "design", "confidence": 1.0, "signals": []}
+
+
 def generate_or_edit_image(key: str, prompt: str, image_bytes: Optional[bytes] = None) -> dict:
     """
     Tạo hoặc sửa đổi ảnh bằng xAI Grok.
@@ -388,6 +433,23 @@ async def ux_audit(
     except Exception as e:
         print(f"[UX Audit API] Lỗi xử lý/scale ảnh: {e}")
         
+    cls_res = classify_image_type(img_data)
+    if cls_res.get("type") != "design" or cls_res.get("confidence", 0.0) <= 0.70:
+        if lang == "vi":
+            msg = "Đây là ảnh không phải thiết kế."
+        else:
+            msg = "This is a photo, not a design."
+        return {
+            "success": False,
+            "error": msg,
+            "errors": [],
+            "detected_elements": [],
+            "summary": msg,
+            "details": [],
+            "markdown_report": msg,
+            "image_size": {"w": 0, "h": 0}
+        }
+
     try:
         persona_dict = parse_persona(persona_context)
         if persona_dict:
@@ -935,6 +997,19 @@ async def unified_chat(
                 except Exception as e:
                     print(f"[Backend] Lỗi xử lý/scale ảnh: {e}")
                 
+                cls_res = classify_image_type(img_data)
+                if cls_res.get("type") != "design" or cls_res.get("confidence", 0.0) <= 0.70:
+                    if actual_lang == "vi":
+                        msg = "Đây là ảnh không phải thiết kế."
+                    else:
+                        msg = "This is a photo, not a design."
+                    return {
+                        "type": "chat",
+                        "reply": msg,
+                        "e": [],
+                        "markdown_report": msg
+                    }
+
                 # -----------------------------------------------------------
                 # LUỒNG PHÂN TÍCH VÀ FEEDBACK NGAY LẬP TỨC
                 # Chạy thẳng Phase 3 critique (không chạy Phase 2A/2B ngầm).
