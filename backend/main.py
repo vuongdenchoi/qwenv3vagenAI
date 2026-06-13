@@ -363,6 +363,16 @@ async def serve_grok_chat():
         )
     return {"message": "Grok chat page not found"}
 
+@app.get("/mini-brand-kit")
+async def serve_mini_brand_kit():
+    html_file = FRONTEND_DIR / "mini-brand-kit.html"
+    if html_file.exists():
+        return FileResponse(
+            str(html_file),
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
+        )
+    return {"message": "Mini Brand Kit page not found"}
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "Design Check AI"}
@@ -2450,6 +2460,47 @@ async def chat_generate(req: ChatGenerateRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+from utils.image_prep import prepare_image
+from services.dna_extractor import extract_dna
+from services.asset_analyzer import analyze_batch
+from services.aggregator import aggregate
+
+@app.post("/brand-check")
+async def brand_check(
+    ref_images: List[UploadFile] = File(...),
+    check_images: List[UploadFile] = File(...)
+):
+    try:
+        # 1. Load & prep images
+        ref_b64s = []
+        for f in ref_images:
+            data = await f.read()
+            if data:
+                ref_b64s.append(prepare_image(data))
+                
+        check_assets = []
+        for f in check_images:
+            data = await f.read()
+            if data:
+                check_assets.append((prepare_image(data), f.filename))
+                
+        if not ref_b64s or not check_assets:
+            raise HTTPException(status_code=400, detail="Missing required images")
+        
+        # 2. Extract DNA
+        dna = extract_dna(ref_b64s)
+        
+        # 3. Analyze all assets in parallel
+        results = await analyze_batch(dna, check_assets)
+        
+        # 4. Aggregate
+        report = aggregate(dna, results)
+        return report
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

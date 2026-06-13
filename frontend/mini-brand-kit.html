@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WillaAI — Mini Brand Kit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #0f0f12;
+      --panel-bg: #16161f;
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-purple: #8b5cf6;
+      --accent-purple-glow: rgba(139, 92, 246, 0.35);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.2);
+      --critical: #ef4444;
+      --major: #f59e0b;
+      --minor: #3b82f6;
+      --radius: 12px;
+      --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body, html {
+      font-family: var(--font-family);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      height: 64px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 10; flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .logo span {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions { display: flex; gap: 12px; }
+    .header-btn {
+      color: var(--text-main); background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border); padding: 8px 16px;
+      border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 500;
+      transition: all 0.2s; cursor: pointer;
+    }
+    .header-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+    .header-btn.accent { background: var(--accent-purple); border-color: transparent; }
+    .header-btn.accent:hover { background: #7c3aed; box-shadow: 0 0 12px var(--accent-purple-glow); }
+    .header-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+    .container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .view-section { display: none; height: 100%; }
+    .view-section.active { display: flex; }
+
+    /* IDLE VIEW */
+    #idleView { flex-direction: column; align-items: center; justify-content: center; padding: 40px; gap: 32px; overflow-y: auto; }
+    .upload-container { display: flex; gap: 24px; max-width: 1000px; width: 100%; justify-content: center; flex-wrap: wrap; }
+    .dropzone {
+      flex: 1; min-width: 300px; max-width: 450px;
+      border: 2px dashed rgba(139, 92, 246, 0.3); background: rgba(22, 22, 31, 0.6);
+      border-radius: var(--radius); padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.3s ease;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; position: relative;
+    }
+    .dropzone:hover { border-color: var(--accent-purple); background: rgba(139, 92, 246, 0.04); }
+    .dropzone-icon { font-size: 2.5rem; }
+    .dropzone-title { font-size: 1.1rem; font-weight: 600; color: #fff; }
+    .dropzone-subtitle { font-size: 0.85rem; color: var(--text-muted); }
+    .badge-ref { position: absolute; top: 12px; right: 12px; background: var(--accent-purple); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+
+    /* Strip */
+    .asset-strip-wrapper { width: 100%; max-width: 1000px; margin-top: 20px; }
+    .asset-strip-title { font-size: 1rem; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between;}
+    .asset-strip {
+      display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: thin; scrollbar-color: var(--accent-purple) var(--panel-bg);
+    }
+    .asset-strip::-webkit-scrollbar { height: 8px; }
+    .asset-strip::-webkit-scrollbar-track { background: var(--panel-bg); border-radius: 4px; }
+    .asset-strip::-webkit-scrollbar-thumb { background: var(--accent-purple); border-radius: 4px; }
+    .thumb-item { width: 80px; height: 80px; flex-shrink: 0; border-radius: 8px; background: #2a2a35; border: 1px solid var(--panel-border); overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* OVERLAY */
+    .loader-overlay {
+      position: absolute; inset: 0; background: rgba(9, 9, 11, 0.85);
+      backdrop-filter: blur(8px); z-index: 1000; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px; display: none;
+    }
+    .loader-overlay.active { display: flex; }
+    .radar-scanner { width: 120px; height: 120px; position: relative; border-radius: 50%; border: 2px solid rgba(139, 92, 246, 0.25); overflow: hidden; }
+    .radar-scanner::after {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: conic-gradient(from 0deg, transparent 50%, var(--accent-purple) 100%);
+      animation: rotate-scanner 2s linear infinite; transform-origin: center; border-radius: 50%; opacity: 0.6;
+    }
+    @keyframes rotate-scanner { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .radar-line {
+      position: absolute; top: 50%; left: 0; width: 100%; height: 2px;
+      background: var(--accent-purple); box-shadow: 0 0 12px var(--accent-purple);
+      animation: scan-vertical 2s ease-in-out infinite;
+    }
+    @keyframes scan-vertical { 0%, 100% { top: 10%; } 50% { top: 90%; } }
+    .loader-text { font-size: 1.2rem; font-weight: 600; color: #fff; }
+    .loader-subtext { font-size: 0.9rem; color: var(--text-muted); animation: pulse-text 1.5s infinite; }
+    @keyframes pulse-text { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* REPORT VIEW */
+    #reportView { flex-direction: row; }
+    .left-panel { flex: 1; min-width: 300px; max-width: 350px; background: #09090b; border-right: 1px solid var(--panel-border); padding: 24px; overflow-y: auto; }
+    .center-panel { flex: 1.5; background: var(--panel-bg); border-right: 1px solid var(--panel-border); display: flex; flex-direction: column; overflow: hidden; }
+    .right-panel { flex: 1.5; background: #0f0f12; padding: 24px; overflow-y: auto; }
+
+    .section-title { font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
+    .score-card { background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(99,102,241,0.05)); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: var(--radius); padding: 24px; text-align: center; margin-bottom: 24px; }
+    .score-value { font-size: 3rem; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 8px; }
+    .score-label { font-size: 0.9rem; color: var(--text-muted); }
+    
+    .dna-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .dna-table th, .dna-table td { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .dna-table th { text-align: left; color: var(--text-muted); font-weight: 500; width: 40%; }
+    .dna-table td { color: #fff; font-weight: 600; }
+    .color-swatch { display: inline-block; width: 16px; height: 16px; border-radius: 4px; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(255,255,255,0.2); }
+
+    .tabs-header { display: flex; border-bottom: 1px solid var(--panel-border); padding: 0 16px; overflow-x: auto; flex-shrink: 0; }
+    .tab-btn { padding: 14px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; white-space: nowrap; }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active { color: var(--accent-purple); border-bottom-color: var(--accent-purple); }
+    
+    .tab-content { padding: 24px; overflow-y: auto; flex: 1; }
+    .issue-card { background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; border-left: 4px solid var(--minor); transition: transform 0.2s; }
+    .issue-card:hover { transform: translateX(4px); background: rgba(255,255,255,0.04); }
+    .issue-card.severe { border-left-color: var(--critical); }
+    .issue-card.moderate { border-left-color: var(--major); }
+    .issue-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .issue-asset-id { font-size: 0.8rem; color: var(--text-muted); }
+    .issue-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; text-transform: uppercase; font-weight: 600; }
+    .issue-tag.severe { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .issue-tag.moderate { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .issue-tag.minor { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .issue-tag.ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+    .issue-desc { font-size: 0.9rem; line-height: 1.5; margin-bottom: 8px; }
+    .issue-fix { font-size: 0.85rem; color: var(--accent-green); background: rgba(16, 185, 129, 0.05); padding: 8px; border-radius: 4px; }
+
+    .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+    .asset-card { background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 8px; overflow: hidden; position: relative; cursor: pointer; }
+    .asset-card:hover { border-color: rgba(255,255,255,0.2); }
+    .asset-img-wrapper { aspect-ratio: 1; background: #1a1a24; padding: 8px; display: flex; align-items: center; justify-content: center;}
+    .asset-img-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .asset-info { padding: 12px; }
+    .asset-name { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .asset-score { font-size: 1rem; font-weight: 600; margin-top: 4px; display: flex; align-items: center; justify-content: space-between;}
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.ok { background: var(--accent-green); }
+    .status-dot.minor { background: var(--minor); }
+    .status-dot.moderate { background: var(--major); }
+    .status-dot.severe { background: var(--critical); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">🪄 Willa<span>AI</span> <small style="font-weight: normal; font-size: 0.75rem; color: var(--text-muted)">Mini Brand Kit</small></div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="resetView()">Tải lại mới</button>
+      <button class="header-btn accent" id="btnRunAudit" onclick="startProcessing()" disabled>Kiểm tra Đồng bộ</button>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- IDLE VIEW -->
+    <div id="idleView" class="view-section active">
+      <div style="text-align: center;">
+        <h1 style="font-size: 1.8rem; margin-bottom: 8px;">Kiểm tra Tính Đồng Bộ Thương Hiệu</h1>
+        <p style="color: var(--text-muted);">Sử dụng AI Vision để đối chiếu thiết kế của bạn với bộ Visual DNA chuẩn</p>
+      </div>
+
+      <div class="upload-container">
+        <!-- Reference Dropzone -->
+        <div class="dropzone" id="refDropzone" onclick="document.getElementById('refInput').click()">
+          <input type="file" id="refInput" accept="image/*" multiple style="display:none" onchange="handleRefUpload(event)" />
+          <span class="badge-ref">REF</span>
+          <div class="dropzone-icon">✨</div>
+          <div class="dropzone-title">Tải lên Ảnh Chuẩn (Reference)</div>
+          <div class="dropzone-subtitle">Chọn 1-3 ảnh thiết kế chuẩn nhất để AI phân tích Visual DNA</div>
+        </div>
+
+        <!-- Asset Dropzone -->
+        <div class="dropzone" id="assetDropzone" onclick="document.getElementById('assetInput').click()">
+          <input type="file" id="assetInput" accept="image/*" multiple style="display:none" onchange="handleAssetUpload(event)" />
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-title">Tải lên Ấn phẩm cần kiểm tra</div>
+          <div class="dropzone-subtitle">Chọn các banner, post mạng xã hội... cần đối chiếu</div>
+        </div>
+      </div>
+
+      <!-- Upload Strip -->
+      <div class="asset-strip-wrapper" id="stripWrapper" style="display: none;">
+        <div class="asset-strip-title">
+          <span>Tài nguyên đã tải lên</span>
+          <span id="uploadCount" style="color: var(--text-muted); font-weight: normal; font-size: 0.85rem;">0 Ref / 0 Assets</span>
+        </div>
+        <div class="asset-strip" id="assetStrip">
+          <!-- Thumbnails -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESSING OVERLAY -->
+    <div class="loader-overlay" id="loaderOverlay">
+      <div class="radar-scanner">
+        <div class="radar-line"></div>
+      </div>
+      <div class="loader-text">Đang phân tích Brand Consistency...</div>
+      <div class="loader-subtext" id="loaderSubtext">Nhận diện Visual DNA từ ảnh Reference...</div>
+      <button class="header-btn" style="margin-top: 20px;" onclick="cancelProcessing()">Ẩn Popup (Tiếp tục chạy ngầm)</button>
+    </div>
+
+    <!-- REPORT VIEW -->
+    <div id="reportView" class="view-section">
+      <!-- Left: Overview & DNA -->
+      <div class="left-panel">
+        <div class="section-title">📊 Tổng quan</div>
+        <div class="score-card">
+          <div class="score-value" id="scoreValue">--</div>
+          <div class="score-label" id="scoreLabel">Đang chờ xử lý...</div>
+        </div>
+
+        <div class="section-title" style="margin-top: 32px;">🧬 Visual DNA Nhận Diện</div>
+        <table class="dna-table">
+          <tbody id="dnaTableBody">
+            <!-- DNA traits injected via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Center: Issues by Category -->
+      <div class="center-panel">
+        <div class="tabs-header" id="tabsHeader">
+          <!-- Tabs injected via JS -->
+        </div>
+        <div class="tab-content" id="tabsContent">
+          <!-- Tab content injected via JS -->
+        </div>
+      </div>
+
+      <!-- Right: Asset Grid -->
+      <div class="right-panel">
+        <div class="section-title">🖼️ Chi tiết Ấn phẩm</div>
+        <div class="asset-grid" id="assetGrid">
+          <!-- Assets injected via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let refFiles = [];
+    let assetFiles = [];
+
+    function checkUploadState() {
+      const btn = document.getElementById('btnRunAudit');
+      btn.disabled = (refFiles.length === 0 || assetFiles.length === 0);
+      document.getElementById('uploadCount').innerText = `${refFiles.length} Ref / ${assetFiles.length} Assets`;
+    }
+
+    function addThumbnail(file, isRef) {
+      const strip = document.getElementById('assetStrip');
+      document.getElementById('stripWrapper').style.display = 'block';
+      const div = document.createElement('div');
+      div.className = 'thumb-item';
+      
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      div.appendChild(img);
+      
+      const badge = document.createElement('div');
+      badge.style.position = 'absolute';
+      badge.style.bottom = '4px';
+      badge.style.right = '4px';
+      badge.style.fontSize = '9px';
+      badge.style.background = 'rgba(0,0,0,0.7)';
+      badge.style.padding = '2px 4px';
+      badge.style.borderRadius = '4px';
+      badge.innerText = isRef ? 'REF' : 'IMG';
+      if(isRef) {
+        div.style.borderColor = 'var(--accent-purple)';
+        badge.style.color = '#c084fc';
+      }
+      div.appendChild(badge);
+      strip.appendChild(div);
+    }
+
+    function handleRefUpload(e) {
+      if (e.target.files.length > 0) {
+        for(let f of e.target.files) {
+            refFiles.push(f);
+            addThumbnail(f, true);
+        }
+        checkUploadState();
+      }
+    }
+
+    function handleAssetUpload(e) {
+      if (e.target.files.length > 0) {
+        for(let f of e.target.files) {
+            assetFiles.push(f);
+            addThumbnail(f, false);
+        }
+        checkUploadState();
+      }
+    }
+
+    async function startProcessing() {
+      if(refFiles.length === 0 || assetFiles.length === 0) return;
+      
+      document.getElementById('loaderOverlay').classList.add('active');
+      document.getElementById('loaderSubtext').innerText = "Đang gửi dữ liệu đến AI Server...";
+      
+      const formData = new FormData();
+      refFiles.forEach(f => formData.append('ref_images', f));
+      assetFiles.forEach(f => formData.append('check_images', f));
+      
+      try {
+          // Dynamic interval text
+          let steps = ["Nhận diện Visual DNA...", "Phân tích hàng loạt ảnh...", "Tổng hợp kết quả..."];
+          let i = 0;
+          let interval = setInterval(() => {
+              i = (i + 1) % steps.length;
+              document.getElementById('loaderSubtext').innerText = steps[i];
+          }, 3000);
+          
+          const response = await fetch('/brand-check', {
+              method: 'POST',
+              body: formData
+          });
+          clearInterval(interval);
+          
+          if(!response.ok) {
+              const errText = await response.text();
+              throw new Error(errText);
+          }
+          
+          const report = await response.json();
+          renderReport(report);
+          
+      } catch (e) {
+          alert("Có lỗi xảy ra trong quá trình phân tích: " + e.message);
+      } finally {
+          document.getElementById('loaderOverlay').classList.remove('active');
+      }
+    }
+
+    function cancelProcessing() {
+      document.getElementById('loaderOverlay').classList.remove('active');
+    }
+
+    function renderReport(report) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.getElementById('reportView').classList.add('active');
+      document.getElementById('btnRunAudit').style.display = 'none';
+      
+      // 1. Overview
+      const ov = report.overview || {};
+      document.getElementById('scoreValue').innerHTML = `${ov.avg_brand_score || 0}<small style="font-size: 1.2rem; color: var(--text-muted);">/100</small>`;
+      document.getElementById('scoreLabel').innerText = `Điểm đồng bộ trung bình (${ov.total_assets || 0} ấn phẩm)`;
+      
+      // 2. DNA
+      const dna = report.visual_dna || {};
+      const dnaBody = document.getElementById('dnaTableBody');
+      dnaBody.innerHTML = '';
+      for(const [k, v] of Object.entries(dna)) {
+          let valHtml = '';
+          if(Array.isArray(v) && k.includes('colors')) {
+              valHtml = v.map(c => `<span class="color-swatch" style="background: ${c};" title="${c}"></span>`).join('');
+          } else {
+              valHtml = Array.isArray(v) ? v.join(', ') : String(v);
+          }
+          const formattedKey = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          dnaBody.innerHTML += `<tr><th>${formattedKey}</th><td>${valHtml}</td></tr>`;
+      }
+      
+      // 3. Issues Tabs
+      const issueGroups = report.issue_groups || {};
+      const tabsHeader = document.getElementById('tabsHeader');
+      const tabsContent = document.getElementById('tabsContent');
+      tabsHeader.innerHTML = '';
+      tabsContent.innerHTML = '';
+      
+      let isFirst = true;
+      for(const [cat, issues] of Object.entries(issueGroups)) {
+          const tabId = 'tab-' + cat.replace(/\\s+/g, '-');
+          
+          // Tab button
+          const btn = document.createElement('button');
+          btn.className = `tab-btn ${isFirst ? 'active' : ''}`;
+          btn.innerHTML = `${cat.toUpperCase()} <span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; margin-left: 4px;">${issues.length}</span>`;
+          btn.onclick = () => switchTab(tabId, btn);
+          tabsHeader.appendChild(btn);
+          
+          // Tab content
+          const contentDiv = document.createElement('div');
+          contentDiv.id = tabId;
+          contentDiv.className = 'cat-content';
+          contentDiv.style.display = isFirst ? 'block' : 'none';
+          contentDiv.innerHTML = `<div class="section-title">Chi tiết vi phạm: ${cat}</div>`;
+          
+          for(const issue of issues) {
+              const card = document.createElement('div');
+              card.className = `issue-card ${issue.severity}`;
+              
+              card.innerHTML = `
+                <div class="issue-header">
+                  <span class="issue-asset-id">${issue.asset_id}</span>
+                  <span class="issue-tag ${issue.severity}">${issue.severity}</span>
+                </div>
+                <div class="issue-desc">${issue.description}</div>
+                ${issue.suggestion ? `<div class="issue-fix">💡 Gợi ý: ${issue.suggestion}</div>` : ''}
+              `;
+              contentDiv.appendChild(card);
+          }
+          tabsContent.appendChild(contentDiv);
+          isFirst = false;
+      }
+      if(Object.keys(issueGroups).length === 0) {
+          tabsContent.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">Tuyệt vời! Không phát hiện vi phạm nào.</div>';
+      }
+      
+      // 4. Asset Grid
+      const assetGrid = document.getElementById('assetGrid');
+      assetGrid.innerHTML = '';
+      const assets = report.asset_details || [];
+      for(const asset of assets) {
+          const file = assetFiles.find(f => f.name === asset.asset_id);
+          const imgSrc = file ? URL.createObjectURL(file) : '';
+          
+          const card = document.createElement('div');
+          card.className = 'asset-card';
+          card.innerHTML = `
+            <div class="asset-img-wrapper">
+              ${imgSrc ? `<img src="${imgSrc}" />` : '<span style="color:var(--text-muted)">No Image</span>'}
+            </div>
+            <div class="asset-info">
+              <div class="asset-name" title="${asset.asset_id}">${asset.asset_id}</div>
+              <div class="asset-score">${asset.brand_score} <div class="status-dot ${asset.severity || 'ok'}"></div></div>
+            </div>
+          `;
+          assetGrid.appendChild(card);
+      }
+    }
+    
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.cat-content').forEach(el => el.style.display = 'none');
+        document.getElementById(tabId).style.display = 'block';
+    }
+
+    function resetView() {
+      refFiles = [];
+      assetFiles = [];
+      document.getElementById('assetStrip').innerHTML = '';
+      document.getElementById('stripWrapper').style.display = 'none';
+      checkUploadState();
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.getElementById('idleView').classList.add('active');
+      document.getElementById('btnRunAudit').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
