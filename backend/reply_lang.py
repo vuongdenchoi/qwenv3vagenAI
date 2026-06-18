@@ -1,12 +1,25 @@
-"""Đồng bộ ngôn ngữ UI (vi/en) với phản hồi AI."""
+"""Đồng bộ ngôn ngữ phản hồi AI — tự động theo ngôn ngữ user chat (vi/en)."""
 from __future__ import annotations
 
 import os
+import re
 from typing import Any, Dict, Optional
+
+_VI_CHARS = set(
+    "àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệđìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ"
+    "ÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆĐÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ"
+)
+
+_VI_WORD_HINTS = (
+    "không", "khong", "được", "duoc", "lỗi", "loi", "sửa", "sua", "thiết kế", "thiet ke",
+    "bối cảnh", "boi canh", "phân tích", "phan tich", "ảnh", "anh", "chữ", "chu",
+    "màu", "mau", "giúp", "giup", "tôi", "toi", "bạn", "ban", "vẽ", "ve", "zoom",
+    "tất cả", "tat ca", "hãy", "hay", "cho", "này", "nay", "đẹp", "dep",
+)
 
 
 def env_default_reply_lang() -> str:
-    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "vi") or "vi").strip().lower()
+    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "auto") or "auto").strip().lower()
     if lang in {"en", "vi", "auto"}:
         return lang
     return "auto"
@@ -16,23 +29,64 @@ def normalize_reply_lang(raw: Optional[str]) -> Optional[str]:
     if raw is None:
         return None
     lang = str(raw).strip().lower()
+    if lang == "auto":
+        return None
     if lang in {"vi", "en"}:
         return lang
     return None
 
 
-def resolve_reply_lang(session_key: str, request_lang: Optional[str], memory_store) -> str:
-    """Ưu tiên: request FE → memory session → env (auto/vi/en)."""
-    norm = normalize_reply_lang(request_lang)
-    if norm:
-        memory_store.set_reply_lang(session_key, norm)
-        return norm
+def detect_message_lang(text: Optional[str]) -> Optional[str]:
+    """Nhận diện vi/en từ nội dung tin nhắn user."""
+    msg = (text or "").strip()
+    if not msg:
+        return None
+
+    vi_diacritic = sum(1 for c in msg if c in _VI_CHARS)
+    if vi_diacritic >= 1:
+        return "vi"
+
+    lower = msg.lower()
+    if any(hint in lower for hint in _VI_WORD_HINTS):
+        return "vi"
+
+    ascii_letters = sum(1 for c in msg if c.isascii() and c.isalpha())
+    if ascii_letters >= 4 and not re.search(r"[\u0100-\u024f]", msg):
+        return "en"
+
+    return None
+
+
+def resolve_reply_lang(
+    session_key: str,
+    request_lang: Optional[str],
+    memory_store,
+    *,
+    user_message: Optional[str] = None,
+) -> str:
+    """
+    Ưu tiên ngôn ngữ tin nhắn user → session memory → env (auto/vi/en).
+
+    Khi env/request là auto: user viết tiếng Việt → vi, tiếng Anh → en.
+    """
+    detected = detect_message_lang(user_message)
+    if detected in {"vi", "en"}:
+        memory_store.set_reply_lang(session_key, detected)
+        return detected
+
+    forced = normalize_reply_lang(request_lang)
+    if forced in {"vi", "en"}:
+        memory_store.set_reply_lang(session_key, forced)
+        return forced
+
     stored = memory_store.get_reply_lang(session_key)
     if stored in {"vi", "en"}:
         return stored
+
     default = env_default_reply_lang()
     if default in {"vi", "en"}:
         return default
+
     return "vi"
 
 
@@ -45,6 +99,18 @@ def router_language_instruction(lang: str) -> str:
     return (
         "Bạn PHẢI trả lời bằng tiếng Việt trong toàn bộ phản hồi chat. "
         "Mọi chuỗi output và reply phải được viết hoàn toàn bằng tiếng Việt tự nhiên."
+    )
+
+
+def conversation_continuity_instruction(lang: str) -> str:
+    if lang == "en":
+        return (
+            "Read the conversation history carefully. Your reply MUST connect to prior user and assistant "
+            "messages in this session (follow-ups, pronouns, error numbers, prior requests)."
+        )
+    return (
+        "Đọc kỹ lịch sử hội thoại. Phản hồi PHẢI liên kết với các tin nhắn trước trong phiên "
+        "(câu hỏi tiếp theo, đại từ, số lỗi, yêu cầu đã nêu)."
     )
 
 

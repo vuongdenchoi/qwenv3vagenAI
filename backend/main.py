@@ -65,6 +65,7 @@ from agents.style_suggest_agent import StyleSuggestAgent
 from memory_store import build_memory_store_from_env
 from reply_lang import (
     _t,
+    conversation_continuity_instruction,
     format_initial_analysis_reply,
     format_post_context_analysis_reply,
     resolve_reply_lang,
@@ -175,7 +176,7 @@ def get_router_reply_lang() -> str:
     - vi: always Vietnamese
     - auto: follow user's message language
     """
-    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "vi") or "vi").strip().lower()
+    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "auto") or "auto").strip().lower()
     if lang in {"en", "vi", "auto"}:
         return lang
     return "vi"
@@ -868,6 +869,66 @@ def _box_to_pixel_xyxy(
     return clamp_pixel_xyxy(box[0], box[1], box[2], box[3], img_w, img_h)
 
 
+def _sync_chat_history(key: str, chat_history: Optional[str]) -> None:
+    """Đồng bộ lịch sử chat từ BE (DB) vào memory_store khi thiếu."""
+    if not chat_history:
+        return
+    try:
+        payload = json.loads(chat_history)
+        if not isinstance(payload, list):
+            return
+        turns: List[Tuple[str, str]] = []
+        for item in payload:
+            if not isinstance(item, dict):
+                continue
+            role = str(item.get("role", "")).strip().lower()
+            text = str(item.get("text") or item.get("content") or "").strip()
+            if role in {"user", "assistant"} and text:
+                turns.append((role, text))
+        if turns:
+            memory_store.sync_turns_from_history(key, turns)
+    except Exception as e:
+        print(f"[chat-history] sync skip: {e}")
+
+
+def _errors_context_from_result(last_result: Optional[dict], lang: str) -> str:
+    if not last_result or not isinstance(last_result, dict):
+        return _t(lang, "Chưa có phân tích lỗi thiết kế nào.", "No design critique yet.")
+    errs = last_result.get("e", [])
+    if not errs:
+        return _t(lang, "Chưa có phân tích lỗi thiết kế nào.", "No design critique yet.")
+    if lang == "vi":
+        return json.dumps(
+            [{"Lỗi số": i + 1, "Vấn đề": e.get("issue") or e.get("r"), "Gợi ý sửa": e.get("suggestion")}
+             for i, e in enumerate(errs)],
+            ensure_ascii=False,
+        )
+    return json.dumps(
+        [{"Error #": i + 1, "Issue": e.get("issue") or e.get("r"), "Suggestion": e.get("suggestion")}
+         for i, e in enumerate(errs)],
+        ensure_ascii=False,
+    )
+
+
+def _build_feedback_chat_system_prompt(
+    actual_lang: str,
+    *,
+    rules_context: str = "",
+    errors_context_str: str = "",
+) -> str:
+    prompt = (
+        "You are WillaAI, a senior graphic design assistant developed by the Ewill team.\n"
+        "You help users review and optimize their designs based on official design rules.\n"
+        f"{localized_router_instruction(actual_lang)}\n"
+        f"{conversation_continuity_instruction(actual_lang)}\n\n"
+    )
+    if errors_context_str:
+        prompt += f"=== DETECTED DESIGN ERRORS ===\n{errors_context_str}\n\n"
+    if rules_context:
+        prompt += f"=== RELEVANT DESIGN RULES ===\n{rules_context}\n\n"
+    return prompt
+
+
 
 @app.post("/chat")
 async def unified_chat(
@@ -879,7 +940,8 @@ async def unified_chat(
     box_2d: Optional[str] = Form("[]"),
     persona_context: Optional[str] = Form(None),
     lang: Optional[str] = Form(None),
-    reply_lang: Optional[str] = Form(None)
+    reply_lang: Optional[str] = Form(None),
+    chat_history: Optional[str] = Form(None),
 ):
     """
     Cổng API hợp nhất (Unified endpoint) thay thế cho /analyze, /chat và /zoom.
@@ -888,7 +950,8 @@ async def unified_chat(
     key = session_id.strip() if session_id else "anonymous"
     msg = message.strip() if message else ""
     action = action_type.strip().lower() if action_type else ""
-    actual_lang = resolve_reply_lang(key, lang or reply_lang, memory_store)
+    _sync_chat_history(key, chat_history)
+    actual_lang = resolve_reply_lang(key, lang or reply_lang, memory_store, user_message=msg)
 
     persona_dict = parse_persona(persona_context)
     if persona_dict:
@@ -1211,7 +1274,7 @@ async def unified_chat(
             # -------------------------------------------------------------------
             # 2. CHẠY BỘ ĐỊNH TUYẾN Ý ĐỊNH ĐỂ KIỂM TRA NHANH CÁC LỆNH (GENERATE / ZOOM)
             # -------------------------------------------------------------------
-            turns = memory_store.get_recent_turns(key, limit=10)
+            turns = memory_store.get_recent_turns(key, limit=12)
             history_messages = [{"role": r, "content": [{"text": t}]} for r, t in turns]
             
             # Kiểm tra nhanh từ khóa RE_ANALYZE
@@ -1228,11 +1291,7 @@ async def unified_chat(
 
             # Chuẩn bị system prompt intent
             pending_gen_prompt = memory_store.get_pending_generation_prompt(key)
-            errors_context_str = "Chưa có phân tích lỗi thiết kế nào."
-            if last_result and isinstance(last_result, dict):
-                errs = last_result.get("e", [])
-                if errs:
-                    errors_context_str = json.dumps([{"Lỗi số": i+1, "Vấn đề": e.get("issue") or e.get("r"), "Gợi ý sửa": e.get("suggestion")} for i, e in enumerate(errs)], ensure_ascii=False)
+            errors_context_str = _errors_context_from_result(last_result, actual_lang)
 
             reply_field_hint = (
                 "Phản hồi chat bằng tiếng Việt, hoặc xác nhận/làm rõ hành động."
@@ -1246,7 +1305,8 @@ async def unified_chat(
                 "=== SYSTEM ROLES & INFORMATION ===\n"
                 "WillaAI is a project developed by the Ewill team, focusing on design feedback solutions to help users analyze errors, identify areas for improvement, and optimize designs more clearly and quickly.\n"
                 "If asked about yourself or your developer, you MUST use the exact phrase above.\n"
-                f"{localized_router_instruction(actual_lang)}\n\n"
+                f"{localized_router_instruction(actual_lang)}\n"
+                f"{conversation_continuity_instruction(actual_lang)}\n\n"
                 "=== RELEVANT DESIGN RULES ===\n"
                 f"{rules_context if rules_context else 'No design rules fetched yet.'}\n\n"
                 "=== CURRENT SESSION STATE ===\n"
@@ -1878,10 +1938,23 @@ async def unified_chat(
                     memory_store.add_turn(key, "assistant", reply)
                     return {"type": "chat", "reply": reply}
 
-                # 7. Ý định CHAT thuần túy
+                # 7. Ý định CHAT thuần túy — gọi LLM với lịch sử + lỗi thiết kế để nối ngữ cảnh
                 else:
-                    if not reply or reply == "normal chat":
-                        reply = "Tôi có thể giúp gì thêm cho bạn về thiết kế này không?" if actual_lang == 'vi' else "Is there anything else I can help you with regarding your design?"
+                    chat_turns = memory_store.get_recent_turns(key, limit=12)
+                    chat_history_messages = [{"role": r, "content": [{"text": t}]} for r, t in chat_turns]
+                    chat_rules = retrieve_design_rules_context(msg, top_k=4)
+                    chat_system = _build_feedback_chat_system_prompt(
+                        actual_lang,
+                        rules_context=chat_rules or "",
+                        errors_context_str=errors_context_str,
+                    )
+                    reply, chat_usage = agent.qwen_agent.chat_text(
+                        system_prompt=chat_system,
+                        user_text=msg,
+                        history_messages=chat_history_messages,
+                    )
+                    if isinstance(chat_usage, dict):
+                        pay_usage = {**pay_usage, **chat_usage}
                     memory_store.add_turn(key, "user", msg)
                     memory_store.add_turn(key, "assistant", reply)
                     return {
@@ -1898,20 +1971,16 @@ async def unified_chat(
             agent = get_agent()
             
             # Lấy lịch sử turns gần nhất để tăng tính nhất quán
-            turns = memory_store.get_recent_turns(key, limit=6)
+            turns = memory_store.get_recent_turns(key, limit=12)
             history_messages = [{"role": r, "content": [{"text": t}]} for r, t in turns]
             
             # Truy vấn RAG cho câu hỏi của người dùng
             rules_context = retrieve_design_rules_context(msg, top_k=4)
             
-            system_prompt = (
-                "You are WillaAI, a senior graphic design assistant developed by the Ewill team.\n"
-                "You help users review and optimize their designs based on official design rules.\n"
-                "Analyze the user's question, refer to the provided project design rules, and answer in a highly professional, helpful manner.\n"
-                "If the user asks in Vietnamese, reply in Vietnamese. Use the design rules context to ground your advice.\n\n"
+            system_prompt = _build_feedback_chat_system_prompt(
+                actual_lang,
+                rules_context=rules_context or "",
             )
-            if rules_context:
-                system_prompt += f"{rules_context}\n"
                 
             reply, pay_usage = agent.qwen_agent.chat_text(
                 system_prompt=system_prompt,

@@ -53,7 +53,7 @@ class MemoryStore:
         max_items_per_session: int = 10,
         max_turns_per_session: int = 20,
         recent_limit: int = 3,
-        recent_turns_limit: int = 6,
+        recent_turns_limit: int = 12,
         ttl_seconds: int = 7 * 24 * 3600,
     ):
         self.max_items_per_session = max_items_per_session
@@ -165,6 +165,31 @@ class MemoryStore:
             if len(mem.turns) > self.max_turns_per_session:
                 mem.turns = mem.turns[-self.max_turns_per_session :]
             mem.updated_at = now
+
+    def sync_turns_from_history(self, key: str, external_turns: List[Tuple[str, str]]) -> None:
+        """Nạp lịch sử chat từ BE khi memory trống hoặc thiếu so với DB."""
+        key = str(key).strip()
+        if not key or not external_turns:
+            return
+        cleaned: List[Tuple[str, str]] = []
+        for role, text in external_turns:
+            r = str(role).strip().lower()
+            t = str(text).strip()
+            if r in {"user", "assistant"} and t:
+                cleaned.append((r, t))
+        if not cleaned:
+            return
+
+        now = time.time()
+        with self._lock:
+            self._prune_locked(now)
+            mem = self._data.get(key)
+            if not mem:
+                mem = SessionMemory()
+                self._data[key] = mem
+            if len(cleaned) > len(mem.turns):
+                mem.turns = cleaned[-self.max_turns_per_session :]
+                mem.updated_at = now
 
     def set_last_analysis(self, key: str, image_bytes: bytes, result: Dict[str, Any]) -> None:
         key = str(key).strip()
@@ -383,7 +408,7 @@ class RedisMemoryStore:
         max_items_per_session: int = 10,
         max_turns_per_session: int = 20,
         recent_limit: int = 3,
-        recent_turns_limit: int = 6,
+        recent_turns_limit: int = 12,
         ttl_seconds: int = 7 * 24 * 3600,
     ):
         # Lazy import so local dev doesn't require redis unless enabled.
@@ -564,6 +589,24 @@ class RedisMemoryStore:
             if len(mem.turns) > self.max_turns_per_session:
                 mem.turns = mem.turns[-self.max_turns_per_session :]
             self._set(key, mem)
+
+    def sync_turns_from_history(self, key: str, external_turns: List[Tuple[str, str]]) -> None:
+        key = str(key).strip()
+        if not key or not external_turns:
+            return
+        cleaned: List[Tuple[str, str]] = []
+        for role, text in external_turns:
+            r = str(role).strip().lower()
+            t = str(text).strip()
+            if r in {"user", "assistant"} and t:
+                cleaned.append((r, t))
+        if not cleaned:
+            return
+        with self._lock:
+            mem = self._get(key)
+            if len(cleaned) > len(mem.turns):
+                mem.turns = cleaned[-self.max_turns_per_session :]
+                self._set(key, mem)
 
     def set_reply_lang(self, key: str, lang: str) -> None:
         key = str(key).strip()
