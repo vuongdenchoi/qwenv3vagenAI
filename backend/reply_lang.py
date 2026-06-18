@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 
 def env_default_reply_lang() -> str:
-    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "auto") or "auto").strip().lower()
+    lang = (os.getenv("AI_ROUTER_REPLY_LANG", "vi") or "vi").strip().lower()
     if lang in {"en", "vi", "auto"}:
         return lang
     return "auto"

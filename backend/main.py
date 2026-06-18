@@ -63,6 +63,13 @@ from agents.design_check_agent import DesignCheckAgent
 from agents.inpaint_agent import InpaintAgent
 from agents.style_suggest_agent import StyleSuggestAgent
 from memory_store import build_memory_store_from_env
+from reply_lang import (
+    _t,
+    format_initial_analysis_reply,
+    format_post_context_analysis_reply,
+    resolve_reply_lang,
+    router_language_instruction as localized_router_instruction,
+)
 
 # Windows console encoding fix
 try:
@@ -414,13 +421,14 @@ async def ux_audit(
     reply_lang: Optional[str] = Form(None),
     persona_context: Optional[str] = Form(None)
 ):
-    lang = lang or reply_lang or "vi"
     """
     Endpoint thực hiện Hybrid Multi-Agent UX Audit.
     Tầng 1: Florence-2/OWL-ViT local.
     Tầng 2: Spacing/Alignment/Contrast.
     Tầng 3: LLM Critic.
     """
+    key = session_id.strip() if session_id else "anonymous"
+    resolved_lang = resolve_reply_lang(key, lang or reply_lang, memory_store)
     if file is None or not file.filename:
         raise HTTPException(status_code=400, detail="Vui lòng cung cấp file ảnh thiết kế.")
     
@@ -445,7 +453,7 @@ async def ux_audit(
         
     cls_res = classify_image_type(img_data)
     if cls_res.get("type") != "design" or cls_res.get("confidence", 0.0) <= 0.70:
-        if lang == "vi":
+        if resolved_lang == "vi":
             msg = "Đây là ảnh không phải thiết kế."
         else:
             msg = "This is a photo, not a design."
@@ -469,10 +477,9 @@ async def ux_audit(
             print(f"[UX Audit API] Loaded persona context: recentAnalysisCount={recent_count}, categoriesCount={cats}")
             
         agent = get_agent()
-        result = agent.run_ux_audit(img_data, lang=lang, persona_context=persona_dict)
+        result = agent.run_ux_audit(img_data, lang=resolved_lang, persona_context=persona_dict)
         
         # Tương thích ngược với hệ thống session/zoom
-        key = session_id.strip() if session_id else "anonymous"
         legacy_errors = []
         for idx, err in enumerate(result["errors"]):
             grid_box = err["c"]
@@ -874,7 +881,6 @@ async def unified_chat(
     lang: Optional[str] = Form(None),
     reply_lang: Optional[str] = Form(None)
 ):
-    lang = lang or reply_lang or "vi"
     """
     Cổng API hợp nhất (Unified endpoint) thay thế cho /analyze, /chat và /zoom.
     Tự động route dựa trên payload gửi lên.
@@ -882,7 +888,7 @@ async def unified_chat(
     key = session_id.strip() if session_id else "anonymous"
     msg = message.strip() if message else ""
     action = action_type.strip().lower() if action_type else ""
-    actual_lang = lang if lang else detect_feedback_language(msg)
+    actual_lang = resolve_reply_lang(key, lang or reply_lang, memory_store)
 
     persona_dict = parse_persona(persona_context)
     if persona_dict:
@@ -980,7 +986,7 @@ async def unified_chat(
             
             return {
                 "type": "zoom",
-                "reply": "Here is the detailed error region:",
+                "reply": _t(actual_lang, "Đây là vùng lỗi chi tiết:", "Here is the detailed error region:"),
                 "image_data_url": b64
             }
 
@@ -1027,7 +1033,6 @@ async def unified_chat(
                 query_str = "graphic design poster advertisement"
                 print(f"[Upload] Đang chạy phân tích trực quan ban đầu bằng luồng Willa Multi-Agent với query: '{query_str}'...")
                 agent = get_agent()
-                pass # removed
                 
                 # Chạy Multi-Agent UX Audit thay cho Single Agent cũ
                 audit_result = agent.run_ux_audit(img_data, lang=actual_lang, persona_context=persona_dict)
@@ -1102,34 +1107,8 @@ async def unified_chat(
                 except Exception:
                     pass
 
-                # Hiển thị feedback đầy đủ
-                compliments = result.get("compliments", [])
-                compliments_text = ""
-                if compliments:
-                    compliments_text = "Design Highlights:\n"
-                    for c in compliments:
-                        compliments_text += f"- {c}\n"
-                    compliments_text += "\n"
-
-                error_count = result.get("te", 0)
-                error_list_text = ""
-                if error_count > 0:
-                    error_list_text = "Key Issues to Address:\n"
-                    for err in result.get("e", [])[:3]:
-                        issue = err.get("issue") or err.get("r", "")
-                        issue = (issue[:100] + "...") if len(issue) > 100 else issue
-                        error_list_text += f"- {issue}\n"
-                    error_list_text += "\n"
-                
-                final_reply = (
-                    f"Welcome to Willa AI!\n"
-                    f"Tôi là Willa Multi-Agent, trợ lý đánh giá thiết kế chuyên sâu.\n\n"
-                    f"{compliments_text}"
-                    f"Tôi đã phát hiện {error_count} lỗi thiết kế (visual critique issues).\n"
-                    f"{error_list_text}"
-                    "Bạn có thể xem các khung đỏ đánh dấu lỗi trực tiếp trên ảnh.\n\n"
-                    "Nếu bạn muốn phân tích sâu hơn về bối cảnh (Context), hãy nhập: \"context\" hoặc \"Rubic\"!"
-                )
+                # Hiển thị feedback đầy đủ (một ngôn ngữ theo UI)
+                final_reply = format_initial_analysis_reply(result, actual_lang)
                 memory_store.add_turn(key, "assistant", final_reply)
                 return {
                     "type": "analysis",
@@ -1154,7 +1133,11 @@ async def unified_chat(
         if image_bytes:
             if not msg:
                 # Có ảnh nhưng chưa có tin nhắn
-                reply = "Please share details about your design context, or type 'I don't know' to proceed."
+                reply = _t(
+                    actual_lang,
+                    "Vui lòng mô tả bối cảnh thiết kế, hoặc gõ \"Tôi không biết\" để tiếp tục.",
+                    "Please share details about your design context, or type 'I don't know' to proceed.",
+                )
                 memory_store.add_turn(key, "assistant", reply)
                 return {"type": "chat", "reply": reply}
             
@@ -1251,13 +1234,19 @@ async def unified_chat(
                 if errs:
                     errors_context_str = json.dumps([{"Lỗi số": i+1, "Vấn đề": e.get("issue") or e.get("r"), "Gợi ý sửa": e.get("suggestion")} for i, e in enumerate(errs)], ensure_ascii=False)
 
+            reply_field_hint = (
+                "Phản hồi chat bằng tiếng Việt, hoặc xác nhận/làm rõ hành động."
+                if actual_lang == "vi"
+                else "English response for normal chat, or a confirmation request/clarification for actions."
+            )
+
             system_prompt_intent = (
                 "You are the routing and cognitive control system of a senior design critique AI assistant named WillaAI.\n"
                 "Analyze the user's message, current state, design context, and visual errors to determine the user's intent with extreme accuracy.\n\n"
                 "=== SYSTEM ROLES & INFORMATION ===\n"
                 "WillaAI is a project developed by the Ewill team, focusing on design feedback solutions to help users analyze errors, identify areas for improvement, and optimize designs more clearly and quickly.\n"
                 "If asked about yourself or your developer, you MUST use the exact phrase above.\n"
-                f"{router_language_instruction()}\n\n"
+                f"{localized_router_instruction(actual_lang)}\n\n"
                 "=== RELEVANT DESIGN RULES ===\n"
                 f"{rules_context if rules_context else 'No design rules fetched yet.'}\n\n"
                 "=== CURRENT SESSION STATE ===\n"
@@ -1305,7 +1294,7 @@ async def unified_chat(
                 '    "error_index": null,\n'
                 '    "description": null\n'
                 '  },\n'
-                '  "reply": "English response for normal chat, or a confirmation request/clarification for actions."\n'
+                f'  "reply": "{reply_field_hint}"\n'
                 "}"
             )
 
@@ -1578,7 +1567,6 @@ async def unified_chat(
                     print(f"[Phase-12 OK] Đang chạy lại critique với query: '{query_str}'...")
                     
                     agent = get_agent()
-                    pass # removed
                     result = agent.analyze(
                         image_bytes=ag_image,
                         filename="image.jpg",
@@ -1603,21 +1591,7 @@ async def unified_chat(
                     # Reset phase về 0 sau khi hoàn thành
                     memory_store.set_antigraviti_state(key, phase=0, image=ag_image, context=ag_context)
                     
-                    error_count = result.get("te", 0)
-                    compliments = result.get("compliments", [])
-                    compliments_text = ""
-                    if compliments:
-                        compliments_text = "✨ Design Highlights:\n"
-                        for c in compliments:
-                            compliments_text += f"💚 {c}\n"
-                        compliments_text += "\n"
-                        
-                    agree_reply = (
-                        f"✅ Design context confirmed successfully!\n\n"
-                        f"{compliments_text}"
-                        f"I have conducted a deep critique and detected **{error_count}** visual design issues based on your new context.\n"
-                        "You can view highlighted bounding boxes on the image, or chat further to zoom/edit."
-                    )
+                    agree_reply = format_post_context_analysis_reply(result, actual_lang, deep=True)
                     
                     memory_store.add_turn(key, "assistant", agree_reply)
                     
@@ -1673,10 +1647,11 @@ async def unified_chat(
 
                     report_text = format_antigraviti_report(_display_analysis, actual_lang)
                     
-                    reply = (
-                        "I have adjusted the context according to your request! 🛠️\n\n"
-                        f"{report_text}"
-                    )
+                    reply = _t(
+                        actual_lang,
+                        "Tôi đã điều chỉnh bối cảnh theo yêu cầu của bạn! 🛠️\n\n",
+                        "I have adjusted the context according to your request! 🛠️\n\n",
+                    ) + report_text
                     memory_store.add_turn(key, "assistant", reply)
                     return {
                         "type": "chat",
@@ -1732,7 +1707,6 @@ async def unified_chat(
                         print(f"Đang chạy lại critique với query: '{query_str}'...")
                         
                         agent = get_agent()
-                        pass # removed
                         result = agent.analyze(
                             image_bytes=ag_image,
                             filename="image.jpg",
@@ -1756,21 +1730,7 @@ async def unified_chat(
                         memory_store.set_last_analysis(key, ag_image, result)
                         memory_store.clear_antigraviti_state(key)
                         
-                        error_count = result.get("te", 0)
-                        compliments = result.get("compliments", [])
-                        compliments_text = ""
-                        if compliments:
-                            compliments_text = "✨ Design Highlights:\n"
-                            for c in compliments:
-                                compliments_text += f"💚 {c}\n"
-                            compliments_text += "\n"
-                            
-                        agree_reply = (
-                            f"✅ Context confirmed!\n\n"
-                            f"{compliments_text}"
-                            f"I have re-analyzed and found **{error_count}** visual design error(s) based on the new context.\n"
-                            "You can see the highlighted errors on the image, or continue chatting to fix them (e.g., 'fix error #1', 'fix all errors')."
-                        )
+                        agree_reply = format_post_context_analysis_reply(result, actual_lang, deep=False)
                         reply = agree_reply
                         memory_store.add_turn(key, "user", msg)
                         memory_store.add_turn(key, "assistant", reply)
@@ -1791,20 +1751,8 @@ async def unified_chat(
                         memory_store.clear_antigraviti_state(key)
                         if stored:
                             stored_bytes, stored_result = stored
-                            error_count = stored_result.get("te", 0)
-                            compliments = stored_result.get("compliments", [])
-                            compliments_text = ""
-                            if compliments:
-                                compliments_text = "✨ Design Highlights:\n"
-                                for c in compliments:
-                                    compliments_text += f"💚 {c}\n"
-                                compliments_text += "\n"
-                                
-                            agree_reply = (
-                                f"✅ Context confirmed!\n\n"
-                                f"{compliments_text}"
-                                f"I have analyzed and found **{error_count}** visual design error(s).\n"
-                                "You can see the highlighted errors on the image, or continue chatting to fix them (e.g., 'fix error #1', 'fix all errors')."
+                            agree_reply = format_post_context_analysis_reply(
+                                stored_result, actual_lang, stored_only=True
                             )
                             reply = agree_reply
                             memory_store.add_turn(key, "user", msg)
