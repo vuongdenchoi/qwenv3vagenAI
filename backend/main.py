@@ -1591,10 +1591,16 @@ async def unified_chat(
 
                 report_text = format_antigraviti_report(_display_analysis, actual_lang)
 
-                reply = (
-                    "Here is the design context I captured and cross-referenced with the RAG knowledge base! 🔍\n\n"
-                    f"{report_text}"
-                )
+                if actual_lang == "vi":
+                    reply = (
+                        "Dưới đây là bối cảnh thiết kế tôi đã thu thập và đối chiếu với hệ thống cơ sở dữ liệu RAG! 🔍\n\n"
+                        f"{report_text}"
+                    )
+                else:
+                    reply = (
+                        "Here is the design context I captured and cross-referenced with the RAG knowledge base! 🔍\n\n"
+                        f"{report_text}"
+                    )
 
                 memory_store.add_turn(key, "assistant", reply)
                 return {

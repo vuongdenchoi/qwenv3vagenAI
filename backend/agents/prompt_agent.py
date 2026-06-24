@@ -174,6 +174,9 @@ class PromptAgent:
                 instruction = persona_text + instruction
 
         system_prompt = SYSTEM_PROMPT
+        tone_instruction_en = "\n10. Tone Requirement: You MUST adopt an objective, data-driven persona. Do NOT use judgmental words like 'violates', 'problem', or 'error'. Instead of saying a design 'violates a rule', describe it objectively, such as 'differs from the principle' or 'does not fully align with the standard'. Frame your issues as neutral observations and your suggestions as constructive recommendations."
+        tone_instruction_vi = "\n10. Yêu cầu giọng văn khách quan: Bạn PHẢI sử dụng văn phong khách quan, dựa trên dữ liệu. KHÔNG sử dụng các từ ngữ mang tính phán xét như 'vi phạm', 'lỗi', hoặc 'sai'. Thay vì nói thiết kế 'vi phạm nguyên tắc', hãy mô tả khách quan như 'chưa bám sát tiêu chí' hoặc 'có sự khác biệt so với nguyên tắc'. Các vấn đề cần được trình bày như những 'quan sát' trung lập và cách khắc phục như những 'gợi ý' mang tính xây dựng."
+
         if lang == "vi":
             system_prompt = system_prompt.replace(
                 "All output text, including compliments, reasoning ('r'), issues, and suggestions, MUST be written entirely in English. Under no circumstances should any Vietnamese language be returned.",
@@ -187,5 +190,8 @@ class PromptAgent:
                 "9. Compliments Structure Guidelines: In the \"compliments\" field, you MUST return exactly 2-3 compliments following these structured criteria in English:",
                 "9. Hướng dẫn cấu trúc lời khen (Compliments): Trong trường \"compliments\", bạn PHẢI trả về chính xác 2-3 lời khen theo các tiêu chí cấu trúc bằng tiếng Việt:"
             )
+            instruction += tone_instruction_vi
+        else:
+            instruction += tone_instruction_en
 
         return system_prompt, instruction
