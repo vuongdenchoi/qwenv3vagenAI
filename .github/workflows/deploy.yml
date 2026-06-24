@@ -22,4 +22,6 @@ jobs:
             cd /opt/willa/ai
             git pull --rebase
             cd /opt/willa/infra
+            docker compose --env-file .env stop ai-server || true
+            docker compose --env-file .env rm -f ai-server || true
             docker compose --env-file .env up -d --no-deps --build ai-server
