@@ -213,19 +213,18 @@ class InpaintAgent:
 
         return base
 
-    def build_prompt(self, errors: List[dict], error_indices: List[int], translator_cb=None) -> str:
+    def build_prompt(self, errors: List[dict], error_indices: List[int], translator_cb=None, lang: str = "en") -> str:
         """
-        Build a structured, English-language inpainting prompt for WillaAI (x.ai).
-
-        Improvements over v1:
-        - Extracts 'Khuyến nghị' from Vietnamese reason and converts to concise English instructions.
-        - Groups fixes into: contrast | typography | layout categories.
-        - Severity-aware detail: critical > major > minor.
-        - Adds style preservation header to prevent WillaAI from breaking original aesthetic.
-        - Separates per-region fixes clearly for model comprehension.
+        Build a structured inpainting prompt for WillaAI (x.ai), localized based on `lang`.
         """
         selected = [errors[i] for i in error_indices if 0 <= i < len(errors)]
         if not selected:
+            if lang == "vi":
+                return (
+                    "Nhiệm vụ: Cải thiện chất lượng hình ảnh tổng thể của thiết kế này. "
+                    "Tăng độ tương phản figure-ground, cải thiện khả năng đọc chữ, và giảm nhiễu thị giác. "
+                    "Giữ nguyên phong cách nghệ thuật gốc, bảng màu, và tất cả các chi tiết thiết kế."
+                )
             return (
                 "Task: Improve the overall visual quality of this image. "
                 "Increase figure-ground contrast, improve text legibility, and reduce visual noise. "
@@ -233,14 +232,24 @@ class InpaintAgent:
             )
 
         # --- Header: Style preservation ---
-        header = (
-            "You are an expert graphic designer applying TARGETED visual fixes to a design image.\n\n"
-            "STYLE PRESERVATION RULES (MANDATORY):\n"
-            "- Preserve the original artistic style (illustration, color palette, overall composition).\n"
-            "- Do NOT add new elements, move characters/text, or change the overall layout.\n"
-            "- Apply changes ONLY within the specified coordinate regions.\n"
-            "- Changes must be subtle and professional — do not over-process.\n\n"
-        )
+        if lang == "vi":
+            header = (
+                "Bạn là một chuyên gia thiết kế đồ họa đang thực hiện các chỉnh sửa trực quan CỤ THỂ lên một hình ảnh thiết kế.\n\n"
+                "QUY TẮC BẢO TOÀN PHONG CÁCH (BẮT BUỘC):\n"
+                "- Giữ nguyên phong cách nghệ thuật gốc (minh họa, bảng màu, bố cục tổng thể).\n"
+                "- KHÔNG THÊM yếu tố mới, KHÔNG DI CHUYỂN nhân vật/chữ, và KHÔNG THAY ĐỔI bố cục tổng thể.\n"
+                "- CHỈ áp dụng các thay đổi trong vùng tọa độ được chỉ định.\n"
+                "- Các thay đổi phải tinh tế và chuyên nghiệp — không được chỉnh sửa quá đà.\n\n"
+            )
+        else:
+            header = (
+                "You are an expert graphic designer applying TARGETED visual fixes to a design image.\n\n"
+                "STYLE PRESERVATION RULES (MANDATORY):\n"
+                "- Preserve the original artistic style (illustration, color palette, overall composition).\n"
+                "- Do NOT add new elements, move characters/text, or change the overall layout.\n"
+                "- Apply changes ONLY within the specified coordinate regions.\n"
+                "- Changes must be subtle and professional — do not over-process.\n\n"
+            )
 
         # --- Group fixes by type ---
         contrast_fixes = []
@@ -305,34 +314,43 @@ class InpaintAgent:
         step = 1
 
         if contrast_fixes:
-            fix_sections.append("=== CONTRAST & FIGURE-GROUND FIXES ===")
+            fix_sections.append("=== SỬA LỖI TƯƠNG PHẢN & FIGURE-GROUND ===" if lang == "vi" else "=== CONTRAST & FIGURE-GROUND FIXES ===")
             for f in contrast_fixes:
                 fix_sections.append(f"  {step}. {f}")
                 step += 1
 
         if typography_fixes:
-            fix_sections.append("\n=== TYPOGRAPHY & LEGIBILITY FIXES ===")
+            fix_sections.append("\n=== SỬA LỖI KIỂU CHỮ & KHẢ NĂNG ĐỌC ===" if lang == "vi" else "\n=== TYPOGRAPHY & LEGIBILITY FIXES ===")
             for f in typography_fixes:
                 fix_sections.append(f"  {step}. {f}")
                 step += 1
 
         if layout_fixes:
-            fix_sections.append("\n=== LAYOUT & VISUAL FLOW FIXES ===")
+            fix_sections.append("\n=== SỬA LỖI BỐ CỤC & LUỒNG THỊ GIÁC ===" if lang == "vi" else "\n=== LAYOUT & VISUAL FLOW FIXES ===")
             for f in layout_fixes:
                 fix_sections.append(f"  {step}. {f}")
                 step += 1
 
         body = "\n".join(fix_sections)
 
-        footer = (
-            "\n\nOUTPUT REQUIREMENTS:\n"
-            "- Return the MODIFIED image with ALL listed fixes applied.\n"
-            "- Every fix must be visible but subtle — professional quality.\n"
-            "- NOTHING outside the specified regions should be changed.\n"
-            "- The overall image must remain cohesive and aesthetically consistent."
-        )
-
-        return header + "TARGETED FIXES (apply in order):\n" + body + footer
+        if lang == "vi":
+            footer = (
+                "\n\nYÊU CẦU ĐẦU RA:\n"
+                "- Trả về hình ảnh ĐÃ CHỈNH SỬA với TẤT CẢ các lỗi được liệt kê đã được xử lý.\n"
+                "- Mỗi sửa lỗi phải rõ ràng nhưng tinh tế — đạt chất lượng chuyên nghiệp.\n"
+                "- KHÔNG thay đổi bất cứ thứ gì bên ngoài các vùng tọa độ đã chỉ định.\n"
+                "- Hình ảnh tổng thể phải duy trì tính nhất quán và thẩm mỹ."
+            )
+            return header + "CÁC CHỈNH SỬA CỤ THỂ (áp dụng theo thứ tự):\n" + body + footer
+        else:
+            footer = (
+                "\n\nOUTPUT REQUIREMENTS:\n"
+                "- Return the MODIFIED image with ALL listed fixes applied.\n"
+                "- Every fix must be visible but subtle — professional quality.\n"
+                "- NOTHING outside the specified regions should be changed.\n"
+                "- The overall image must remain cohesive and aesthetically consistent."
+            )
+            return header + "TARGETED FIXES (apply in order):\n" + body + footer
 
     # ------------------------------------------------------------------
     # 3. Build preview mask (chi hien thi UI, khong gui API)
@@ -490,6 +508,7 @@ class InpaintAgent:
         session_id: str,
         custom_prompt: Optional[str] = None,
         translator_cb=None,
+        lang: str = "en",
     ) -> dict:
         """
         Full pipeline: upload ảnh -> build prompt -> gọi WillaAI (x.ai) -> trả về kết quả.
@@ -508,7 +527,7 @@ class InpaintAgent:
         if custom_prompt and custom_prompt.strip():
             prompt = custom_prompt.strip()
         else:
-            prompt = self.build_prompt(errors, error_indices, translator_cb=translator_cb)
+            prompt = self.build_prompt(errors, error_indices, translator_cb=translator_cb, lang=lang)
 
         print(f"[InpaintAgent] fix_errors: {len(error_indices)} errors selected")
         print(f"[InpaintAgent] Prompt: {prompt[:100]}...")

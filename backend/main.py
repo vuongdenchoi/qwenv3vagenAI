@@ -2102,6 +2102,7 @@ def retrieve_design_rules_context(query: str, top_k: int = 3) -> str:
 async def prepare_regen(
     session_id: Optional[str] = Form(""),
     error_indices: Optional[str] = Form("[]"),  # JSON array string, e.g. "[0,2]"
+    replyLang: Optional[str] = Form("auto"),
 ):
     """
     Bước 1: Nhận danh sách index lỗi muốn fix.
@@ -2135,7 +2136,8 @@ async def prepare_regen(
     preview_b64 = "data:image/png;base64," + base64.b64encode(preview_bytes).decode("utf-8")
 
     # Tạo prompt gợi ý
-    suggested_prompt = agent.build_prompt(errors, indices, translator_cb=translate_vi_to_en)
+    actual_lang = replyLang if replyLang in ["vi", "en"] else "en" ; print(f"DEBUG prepare-regen: replyLang={replyLang}, actual_lang={actual_lang}")
+    suggested_prompt = agent.build_prompt(errors, indices, translator_cb=translate_vi_to_en, lang=actual_lang)
 
     # Chỉ lưu local (không upload ImgBB ở đây - tránh lỗi network không cần thiết)
     agent.save_local_image(image_bytes, key)
@@ -2155,6 +2157,7 @@ async def regen_image(
     session_id: Optional[str] = Form(""),
     error_indices: Optional[str] = Form("[]"),
     final_prompt: Optional[str] = Form(""),
+    replyLang: Optional[str] = Form("auto"),
 ):
     """
     Bước 2: Gọi WillaAI Image Edits API để gen lại ảnh đã sửa lỗi.
@@ -2177,6 +2180,7 @@ async def regen_image(
     agent = get_inpaint_agent()
 
     try:
+        actual_lang = replyLang if replyLang in ["vi", "en"] else "en" ; print(f"DEBUG prepare-regen: replyLang={replyLang}, actual_lang={actual_lang}")
         result = agent.fix_errors(
             image_bytes=image_bytes,
             analysis_result=last_result or {},
@@ -2184,6 +2188,7 @@ async def regen_image(
             session_id=key,
             custom_prompt=final_prompt.strip() if final_prompt else None,
             translator_cb=translate_vi_to_en,
+            lang=actual_lang,
         )
     except Exception as e:
         import traceback
