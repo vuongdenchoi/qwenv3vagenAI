@@ -2528,6 +2528,52 @@ async def brand_check(
     except Exception as e:
         import traceback
         traceback.print_exc()
+
+class WorkspaceChatRequest(BaseModel):
+    messages: List[Dict[str, str]]
+    grok_api_key: Optional[str] = ""
+
+@app.post("/workspace-chat")
+async def workspace_chat(req: WorkspaceChatRequest):
+    messages = req.messages
+    if not messages:
+        raise HTTPException(status_code=400, detail="No messages provided.")
+        
+    actual_grok_key = req.grok_api_key or os.getenv("XAI_API_KEY", "")
+    
+    if not actual_grok_key:
+        raise HTTPException(status_code=400, detail="xAI API Key is missing.")
+
+    headers = {
+        "Authorization": f"Bearer {actual_grok_key}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "model": "grok-build-0.1",
+        "messages": messages,
+        "temperature": 0.7
+    }
+    
+    try:
+        resp = requests.post("https://api.x.ai/v1/chat/completions", headers=headers, json=payload, timeout=60)
+        if not resp.ok:
+            # Fallback if grok-build-0.1 doesn't exist, try grok-beta
+            if resp.status_code == 404 or "model" in resp.text.lower():
+                payload["model"] = "grok-beta"
+                resp = requests.post("https://api.x.ai/v1/chat/completions", headers=headers, json=payload, timeout=60)
+            
+            if not resp.ok:
+                raise HTTPException(status_code=resp.status_code, detail=f"Grok API error: {resp.text}")
+            
+        data = resp.json()
+        reply = data["choices"][0]["message"]["content"].strip()
+                    
+        return {"text": reply}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
