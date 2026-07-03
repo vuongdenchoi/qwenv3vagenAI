@@ -213,6 +213,43 @@ class InpaintAgent:
 
         return base
 
+    def _build_vietnamese_fix_instruction(self, severity: str, fix_type: str, recommendation: str, coords: list) -> str:
+        """
+        Convert recommendation + metadata into a concise Vietnamese fix instruction for WillaAI.
+        """
+        coord_str = f"[{coords[0]}, {coords[1]}, {coords[2]}, {coords[3]}]" if coords else "toàn bộ ảnh"
+        sev_label = severity.upper()
+
+        if fix_type == "contrast":
+            base = (
+                f"[{sev_label}] Vùng {coord_str}: "
+                "Thêm một lớp phủ tối nhẹ (10-15% đen) vào NỀN trong vùng này để tăng cường độ tương phản figure-ground. "
+                "Chủ thể chính/nhân vật phải trở nên nổi bật hơn. "
+                "KHÔNG ĐƯỢC di chuyển, thay đổi hoặc chỉnh sửa nhân vật chính hay các yếu tố tiền cảnh."
+            )
+        elif fix_type == "typography":
+            base = (
+                f"[{sev_label}] Vùng {coord_str}: "
+                "Cải thiện khả năng đọc chữ trong vùng này. Thêm hiệu ứng phát sáng mờ màu trắng hoặc viền sáng xung quanh chữ. "
+                "Hoặc có thể làm tối/mờ trực tiếp nền ngay phía sau chữ để tăng độ tương phản. "
+                "KHÔNG ĐƯỢC thay đổi vị trí, kích thước, hay kiểu font của bất kỳ chữ nào."
+            )
+        elif fix_type == "layout":
+            base = (
+                f"[{sev_label}] Vùng {coord_str}: "
+                "Cải thiện sự rõ ràng của thiết kế và khoảng cách trong vùng này. Giảm nhiễu thị giác bằng cách giảm nhẹ độ bão hòa của các yếu tố phụ. "
+                "Đảm bảo yếu tố quan trọng nhất trong khu vực này là điểm nhấn rõ ràng nhất. "
+                "KHÔNG ĐƯỢC sắp xếp lại các yếu tố thiết kế chính."
+            )
+        else:
+            base = f"[{sev_label}] Vùng {coord_str}: Áp dụng tăng cường hình ảnh để cải thiện chất lượng thiết kế."
+
+        if len(recommendation) > 20:
+            hint = recommendation[:200].rstrip(".") + "."
+            base += f" (Ghi chú thiết kế: {hint})"
+
+        return base
+
     def build_prompt(self, errors: List[dict], error_indices: List[int], translator_cb=None, lang: str = "en") -> str:
         """
         Build a structured inpainting prompt for WillaAI (x.ai), localized based on `lang`.
@@ -274,17 +311,6 @@ class InpaintAgent:
                 full_reason = reason
                 recommendation = self._extract_recommendation(reason)
 
-            is_translated = False
-            if translator_cb and recommendation:
-                try:
-                    print(f"[InpaintAgent] Translating recommendation: {recommendation}")
-                    translated_rec = translator_cb(recommendation)
-                    print(f"[InpaintAgent] Translated result: {translated_rec}")
-                    recommendation = translated_rec
-                    is_translated = True
-                except Exception as e:
-                    print(f"[InpaintAgent] Translation failed: {e}")
-
             fix_type = self._classify_fix_type(full_reason, category)
 
             coords = []
@@ -294,13 +320,31 @@ class InpaintAgent:
                 except (TypeError, ValueError):
                     coords = []
 
-            # If translated, use the specific recommendation directly without generic templates!
-            if is_translated:
-                coord_str = f"[{coords[0]}, {coords[1]}, {coords[2]}, {coords[3]}]" if coords else "entire image"
+            if lang == "vi":
+                coord_str = f"[{coords[0]}, {coords[1]}, {coords[2]}, {coords[3]}]" if coords else "toàn bộ ảnh"
                 sev_label = severity.upper()
-                instruction = f"[{sev_label}] Region {coord_str}: {recommendation}"
+                if recommendation:
+                    instruction = f"[{sev_label}] Vùng {coord_str}: {recommendation}"
+                else:
+                    instruction = self._build_vietnamese_fix_instruction(severity, fix_type, recommendation, coords)
             else:
-                instruction = self._build_english_fix_instruction(severity, fix_type, recommendation, coords)
+                is_translated = False
+                if translator_cb and recommendation:
+                    try:
+                        print(f"[InpaintAgent] Translating recommendation: {recommendation}")
+                        translated_rec = translator_cb(recommendation)
+                        print(f"[InpaintAgent] Translated result: {translated_rec}")
+                        recommendation = translated_rec
+                        is_translated = True
+                    except Exception as e:
+                        print(f"[InpaintAgent] Translation failed: {e}")
+
+                if is_translated:
+                    coord_str = f"[{coords[0]}, {coords[1]}, {coords[2]}, {coords[3]}]" if coords else "entire image"
+                    sev_label = severity.upper()
+                    instruction = f"[{sev_label}] Region {coord_str}: {recommendation}"
+                else:
+                    instruction = self._build_english_fix_instruction(severity, fix_type, recommendation, coords)
 
             if fix_type == "typography":
                 typography_fixes.append(instruction)

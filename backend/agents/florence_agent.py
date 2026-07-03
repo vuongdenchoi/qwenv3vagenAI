@@ -13,6 +13,25 @@ class FlorenceAgent:
 
     def _ensure_loaded(self):
         if self.model is None:
+            # Patch check_imports to bypass flash_attn requirement on CPU
+            from transformers.dynamic_module_utils import get_imports
+            import transformers.dynamic_module_utils
+            
+            def custom_check_imports(filename):
+                imports = get_imports(filename)
+                missing_packages = []
+                for imp in imports:
+                    if imp == "flash_attn":
+                        continue
+                    try:
+                        import importlib
+                        importlib.import_module(imp)
+                    except ImportError:
+                        missing_packages.append(imp)
+                return missing_packages
+
+            transformers.dynamic_module_utils.check_imports = custom_check_imports
+
             print(f"[FlorenceAgent] Loading model {self.model_id} on {self.device}...")
             # Note: trust_remote_code=True is required for Florence-2
             self.processor = AutoProcessor.from_pretrained(self.model_id, trust_remote_code=True)
