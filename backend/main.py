@@ -494,10 +494,13 @@ async def ux_audit(
             legacy_errors.append({
                 "c": pixel_box,
                 "c_grid": grid_box,
-                "r": err["r"],
-                "s": err["s"],
-                "g": err["g"],
-                "id": idx
+                "r": err.get("r", ""),
+                "s": err.get("s", "minor"),
+                "g": err.get("g", "general"),
+                "id": idx,
+                "issue": err.get("issue", ""),
+                "suggestion": err.get("suggestion", ""),
+                "reference": err.get("reference")
             })
             
         legacy_result = {
@@ -1119,7 +1122,8 @@ async def unified_chat(
                         "g": err.get("g", "general"),
                         "id": idx,
                         "issue": err.get("issue", ""),
-                        "suggestion": err.get("suggestion", "")
+                        "suggestion": err.get("suggestion", ""),
+                        "reference": err.get("reference")
                     })
                     
                 result = {

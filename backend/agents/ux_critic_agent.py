@@ -231,6 +231,20 @@ class UXCriticAgent:
                 instruction=instruction,
                 mime_type="image/jpeg"
             )
+            
+            # Enrich validated_errors with Exa references
+            from services.exa_reference import get_cached_or_search
+            validated_errors = raw_result.get("validated_errors", [])
+            for e in validated_errors:
+                # We don't have enough info in the AI output to search effectively without full context,
+                # but we can try searching based on the category and rule violated to get general guidelines.
+                cat = e.get("g", "")
+                rule = e.get("r", "")
+                issue = e.get("issue", "")
+                if cat and issue:
+                    ref = get_cached_or_search(category=cat, rule_violated=rule, issue_description=f"[{cat}] {rule} {issue}")
+                    if ref:
+                        e["reference"] = { "url": ref.get("url"), "title": ref.get("title") }                 
             return raw_result
         except Exception as e:
             print(f"[UXCriticAgent] Error generating critique: {e}")

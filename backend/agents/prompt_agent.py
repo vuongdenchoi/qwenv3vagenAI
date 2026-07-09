@@ -50,14 +50,14 @@ Instructions:
     b. Specific Compliments: The subsequent 1-2 compliments MUST praise specific points, selecting from: Layout, Colors, Idea, Logic, Effects, Creativity, Full Functionality, or Presentation skills.
 
 Return ONLY valid JSON — no markdown, no extra text:
-{{
+{
   "compliments": [
     "General Compliment (e.g., 'The work shows great investment and creativity...')",
     "Specific Compliment 1 (focused on layout, color, idea, etc.)",
     "Specific Compliment 2"
   ],
   "e": [
-    {{
+    {
       "r": "The layout is cluttered... <box>(200,150),(300,450)</box>",
       "issue": "[Describe the specific issue in the context of layout/typography/CTA...]",
       "suggestion": "[Propose a specific repair action based on design rules]",
@@ -65,11 +65,11 @@ Return ONLY valid JSON — no markdown, no extra text:
       "g": "color_theory|typography|layout_rules|logo_design|poster_design|icon_design|pattern_design|general",
       "rule_violated": "[Exact rule title header violated, e.g., '[Color Theory > Color Contrast] — Contrast Ratio Standard']",
       "c": [150, 200, 450, 300]
-    }}
+    }
   ]
-}}
+}
 
-If after thorough inspection the design truly has NO violations at all, return {{"compliments": ["...", "...", "..."], "e": []}}.
+If after thorough inspection the design truly has NO violations at all, return {"compliments": ["...", "...", "..."], "e": []}.
 
 === FEW-SHOT EXAMPLE (Reference output for a greeting card with many issues) ===
 {
@@ -79,11 +79,11 @@ If after thorough inspection the design truly has NO violations at all, return {
     "The layout design shows exceptional creativity and clear focal structure."
   ],
   "e": [
-  {{"c": [0, 30, 563, 136], "r": "The title uses a curly script font with very low contrast against the background...", "issue": "The title uses a curly script font with very low contrast against the background, breaking visual hierarchy and making it hard to read.", "suggestion": "Change to a bold sans-serif font and increase text/background color contrast.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Contrast] — Title Legibility Rule"}},
-  {{"c": [306, 136, 629, 257], "r": "The Call to Action (CTA) button blends in due to a purple border matching the background color...", "issue": "The Call to Action (CTA) button blends in due to a purple border matching the background color, failing to create a visual focal point.", "suggestion": "Use a high-contrast solid background color for the CTA button to attract attention.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Focal Points] — CTA Button Contrast Rule"}},
-  {{"c": [448, 329, 623, 636], "r": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise...", "issue": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise.", "suggestion": "Group related information, use consistent alignment, and increase white space.", "s": "major", "g": "layout_rules", "rule_violated": "[Layout Design > Composition] — Whitespace & Spacing Rule"}},
-  {{"c": [0, 0, 649, 896], "r": "The overall design lacks clear visual hierarchy and a primary focal point...", "issue": "The overall design lacks clear visual hierarchy and a primary focal point, obscuring the core message.", "suggestion": "Reorganize the layout to guide the viewer's eye from the Main Title -> Benefits -> CTA Button.", "s": "critical", "g": "pattern_design", "rule_violated": "[Layout Design > Visual Hierarchy] — Compositional Hierarchy Rule"}}
-]}}
+  {"c": [0, 30, 563, 136], "r": "The title uses a curly script font with very low contrast against the background...", "issue": "The title uses a curly script font with very low contrast against the background, breaking visual hierarchy and making it hard to read.", "suggestion": "Change to a bold sans-serif font and increase text/background color contrast.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Contrast] — Title Legibility Rule"},
+  {"c": [306, 136, 629, 257], "r": "The Call to Action (CTA) button blends in due to a purple border matching the background color...", "issue": "The Call to Action (CTA) button blends in due to a purple border matching the background color, failing to create a visual focal point.", "suggestion": "Use a high-contrast solid background color for the CTA button to attract attention.", "s": "major", "g": "poster_design", "rule_violated": "[Poster Design > Focal Points] — CTA Button Contrast Rule"},
+  {"c": [448, 329, 623, 636], "r": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise...", "issue": "Cluttered layout with inconsistent font sizes, spacing, and alignment, causing visual noise.", "suggestion": "Group related information, use consistent alignment, and increase white space.", "s": "major", "g": "layout_rules", "rule_violated": "[Layout Design > Composition] — Whitespace & Spacing Rule"},
+  {"c": [0, 0, 649, 896], "r": "The overall design lacks clear visual hierarchy and a primary focal point...", "issue": "The overall design lacks clear visual hierarchy and a primary focal point, obscuring the core message.", "suggestion": "Reorganize the layout to guide the viewer's eye from the Main Title -> Benefits -> CTA Button.", "s": "critical", "g": "pattern_design", "rule_violated": "[Layout Design > Visual Hierarchy] — Compositional Hierarchy Rule"}
+]}
 === END OF EXAMPLE — Now analyze the NEW image below with the same critical depth ===
 """
 
@@ -121,7 +121,7 @@ class PromptAgent:
             context_lines.append(f"{header}\n{text}")
 
         context     = "\n\n---\n\n".join(context_lines)
-        instruction = INSTRUCTION_TEMPLATE.format(context=context)
+        instruction = INSTRUCTION_TEMPLATE.replace("{context}", context)
 
         if confirmed_context:
             context_str = ""

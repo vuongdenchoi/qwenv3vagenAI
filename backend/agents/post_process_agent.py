@@ -7,6 +7,7 @@ import re
 from PIL import Image
 import io
 from .color_analyzer import analyze_box_contrast
+from services.exa_reference import get_cached_or_search
 from box_coordinates import (
     COORD_FRAME_PIXEL,
     BOX_TAG_RE,
@@ -106,14 +107,20 @@ class PostProcessAgent:
 
             if pixel is None:
                 print(f"[DEBUG] No box for error (keeping text-only): {issue[:60] if issue else reason[:60]}")
-                pending.append(({
+                entry_text_only = {
                     "r": new_reason or issue or suggestion,
                     "issue": strip_box_tags(issue),
                     "suggestion": strip_box_tags(suggestion),
                     "s": severity,
                     "g": category,
                     "rule_violated": rule_violated,
-                }, copy.deepcopy(err)))
+                }
+                
+                ref = get_cached_or_search(category, rule_violated, new_reason or issue)
+                if ref:
+                    entry_text_only["reference"] = ref
+                    
+                pending.append((entry_text_only, copy.deepcopy(err)))
                 continue
 
             x1, y1, x2, y2 = pixel
@@ -138,6 +145,11 @@ class PostProcessAgent:
                 "g": category,
                 "rule_violated": rule_violated,
             }
+            
+            ref = get_cached_or_search(category, rule_violated, new_reason or issue)
+            if ref:
+                entry["reference"] = ref
+
             if grid is not None:
                 entry["c_grid"] = grid
                 entry["c_pixel"] = [x1, y1, x2, y2]

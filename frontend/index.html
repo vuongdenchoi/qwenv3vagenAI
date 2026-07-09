@@ -1200,7 +1200,7 @@
             <div class="reason">
               ${err.issue ? `<div style="margin-bottom: 4px;"><strong>Vấn đề:</strong> ${err.issue}</div>` : ''}
               ${err.suggestion ? `<div style="color: #10a37f;"><strong>Hướng sửa:</strong> ${err.suggestion}</div>` : (!err.issue && !err.suggestion ? err.r : '')}
-            </div>
+              ${err.reference && err.reference.url ? `<div style="margin-top: 4px; font-size: 0.8rem; color: #888;"><strong>Reference:</strong> <a href="${err.reference.url}" target="_blank" style="color: #3498db; text-decoration: none;">${err.reference.title || 'Tài liệu liên quan'}</a></div>` : ''}
             </div>
             <span class="error-tag tag-${err.s}">${err.s}</span>
             <div style="display:flex; flex-direction:column; gap:4px; margin-left: 8px;">

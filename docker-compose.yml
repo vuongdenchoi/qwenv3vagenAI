@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: Willa-ai-server:latest
-    container_name: Willa-ai-server
+    image: willa-ai-server:latest
+    container_name: willa-ai-server
     ports:
       - "8000:8000"
     env_file:

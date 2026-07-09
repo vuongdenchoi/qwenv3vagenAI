@@ -17,3 +17,5 @@ timm
 einops
 torchvision
 opencv-python-headless
+exa_py
+python-dotenv
