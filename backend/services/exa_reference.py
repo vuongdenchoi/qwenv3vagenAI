@@ -10,7 +10,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 EXA_API_KEY = os.getenv('EXA_API_KEY')
 CACHE_FILE = os.path.join(os.path.dirname(__file__), '..', 'data_original', 'ref_cache.json')
 
-def find_reference(issue_description: str):
+def build_reference(issue_description: str):
     if not EXA_API_KEY:
         print("[Exa API] EXA_API_KEY not configured.")
         return None
@@ -20,31 +20,45 @@ def find_reference(issue_description: str):
             "x-api-key": EXA_API_KEY,
             "Content-Type": "application/json"
         }
+        
+        # Truy vấn kết hợp ngữ cảnh thiết kế để ưu tiên ra ảnh minh họa (Pinterest, Dribbble, Behance, báo chí...)
+        search_query = f"{issue_description} graphic design example inspiration"
+        
         payload = {
-            "query": issue_description,
+            "query": search_query,
             "type": "auto",
-            "numResults": 3,
-            "includeDomains": ["w3.org", "webaim.org", "developer.apple.com", "m3.material.io", "nngroup.com"],
-            "contents": {"highlights": True}
+            "numResults": 10,
+            "contents": {"text": False}
         }
+        
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
         data = response.json()
-        return data.get("results", [])
+        
+        results = data.get("results", [])
+        
+        # Ưu tiên trả về kết quả có chứa ảnh (Visual Reference)
+        for r in results:
+            if r.get("image"):
+                return {
+                    "title": r.get("title"),
+                    "url": r.get("url"),
+                    "image_url": r.get("image")
+                }
+                
+        # Fallback nếu không có ảnh nào được tìm thấy
+        if results:
+            top = results[0]
+            return {
+                "title": top.get("title"),
+                "url": top.get("url"),
+                "image_url": None
+            }
+            
+        return None
     except Exception as e:
         print(f"[Exa API] Search failed: {e}")
         return None
-
-def build_reference(issue_description: str):
-    results = find_reference(issue_description)
-    if not results:
-        return None
-    top = results[0]
-    return {
-        "title": top.get("title"),
-        "url": top.get("url"),
-        "excerpt": top.get("highlights", [None])[0] if top.get("highlights") else None
-    }
 
 def get_cached_or_search(category: str, rule_violated: str, issue_description: str):
     # Normalize key based on category and rule_violated
