@@ -2,720 +2,333 @@
     "e": [
         {
             "c": [
-                699,
-                113,
-                1040,
-                155
+                76,
+                0,
+                422,
+                336
             ],
             "c_grid": [
-                467,
                 76,
-                693,
-                103
+                0,
+                412,
+                236
             ],
-            "r": "Nút 'SHOPPING NOW' có độ tương phản chữ 3.55:1, không đạt mức tối thiểu 4.5:1 theo WCAG. Cần thay đổi màu chữ thành trắng đậm hơn hoặc thêm lớp phủ tối nhẹ lên nền xanh dương.",
+            "r": "Dòng chữ 'Yeah' đầu tiên có độ tương phản chỉ 2.67:1, không đạt mức tối thiểu 4.5:1 theo WCAG. Cần tăng độ sáng của chữ hoặc thêm lớp nền tối nhẹ để cải thiện khả năng đọc từ xa.",
             "s": "critical",
             "g": "color_theory",
             "id": 0,
-            "issue": "Nút hành động 'SHOPPING NOW' có độ tương phản chữ không đạt chuẩn WCAG (3.55:1 < 4.5:1)",
-            "suggestion": "Chuyển chữ sang màu trắng đậm hoặc thêm lớp phủ tối nhẹ (rgba(0,0,0,0.1)) lên nền xanh dương để đạt độ tương phản ≥4.5:1."
+            "issue": "Độ tương phản chữ kém (WCAG Contrast) — tỷ lệ 2.67:1, không đạt mức tối thiểu 4.5:1",
+            "suggestion": "Chuyển chữ sang màu trắng tinh (RGB 255,255,255) hoặc vàng nhạt (RGB 255,230,180), đồng thời thêm lớp bóng mờ nhẹ hoặc nền tối nhẹ (rgba(0,0,0,0.05)) để nâng cao độ tương phản."
         },
         {
             "c": [
-                1236,
-                444,
-                1397,
-                469
+                198,
+                41,
+                712,
+                374
             ],
             "c_grid": [
-                825,
-                297,
-                931,
-                312
+                195,
+                30,
+                695,
+                263
             ],
-            "r": "Chữ 'QUÀ TẶNG 179K' có độ tương phản 1.10:1, không đạt mức tối thiểu 4.5:1. Nên thay đổi màu chữ hoặc nền để tăng độ tương phản.",
+            "r": "Dòng chữ 'Yeah Yeah La la' thứ hai có độ tương phản ~2.37:1, không đạt mức tối thiểu 4.5:1. Đây là lỗi lặp lại, ảnh hưởng đến khả năng nhận diện thông điệp chính.",
             "s": "critical",
             "g": "color_theory",
             "id": 1,
-            "issue": "Thông tin khuyến mãi 'QUÀ TẶNG 179K' có độ tương phản quá thấp (1.10:1)",
-            "suggestion": "Chuyển chữ sang màu đen hoặc trắng đậm, hoặc tăng độ bão hòa nền để đạt độ tương phản tối thiểu 4.5:1."
+            "issue": "Độ tương phản chữ kém (WCAG Contrast) — tỷ lệ 2.37:1, không đạt mức tối thiểu 4.5:1",
+            "suggestion": "Sử dụng font chữ đậm hơn và tăng độ tương phản bằng cách giảm độ bão hòa của nền hoặc thêm đường viền mỏng màu đen cho chữ."
         },
         {
             "c": [
-                1293,
-                609,
-                1348,
-                635
+                291,
+                176,
+                714,
+                421
             ],
             "c_grid": [
-                863,
-                407,
-                898,
-                423
+                286,
+                125,
+                697,
+                296
             ],
-            "r": "Chữ 'VOUCHER 50%' có độ tương phản 1.34:1 — không đọc được trên nền đỏ cam. Đồng thời, sai lệch căn giữa dọc với phần tử trên làm mất tính nhất quán bố cục.",
+            "r": "Dòng chữ 'La la' cuối cùng có độ tương phản ~2.34:1, không đạt mức tối thiểu 4.5:1. Kích thước không tuân thủ lưới 8pt grid (421px → nên là 416/424px; 243px → nên là 240/248px).",
+            "s": "critical",
+            "g": "color_theory",
+            "id": 2,
+            "issue": "Độ tương phản chữ kém và sai lệch kích thước lưới",
+            "suggestion": "Căn chỉnh lại chiều rộng thành 416px hoặc 424px, chiều cao thành 240px hoặc 248px, đồng thời tăng độ tương phản bằng cách chuyển nền phía sau chữ sang tone xanh nhạt hơn hoặc thêm lớp phủ màu trắng mờ."
+        },
+        {
+            "c": [
+                372,
+                994,
+                673,
+                1050
+            ],
+            "c_grid": [
+                365,
+                700,
+                657,
+                738
+            ],
+            "r": "Dòng chữ 'OPEN HAPPINESS' trên dải băng đỏ có độ tương phản cực kỳ thấp (1.18:1), không đạt mức tối thiểu 3:1 theo WCAG. Đây là lỗi nghiêm trọng vì nằm ngay trên sản phẩm trung tâm.",
             "s": "critical",
             "g": "color_theory",
             "id": 3,
-            "issue": "Thông tin voucher giảm giá có độ tương phản cực kỳ thấp (1.34:1) và sai lệch vị trí dọc so với phần tử trên.",
-            "suggestion": "Chuyển chữ sang màu trắng hoặc vàng sáng, và căn chỉnh lại chiều cao và vị trí dọc của cả ba phần tử ưu đãi để đồng bộ."
+            "issue": "Độ tương phản chữ kém — tỷ lệ 1.18:1, không đạt mức tối thiểu 3:1",
+            "suggestion": "Chuyển chữ sang màu trắng hoặc kem (RGB 250,245,230), hoặc thay đổi màu nền dải băng sang đỏ đậm hơn (RGB 180,0,0) để tạo độ tương phản tốt hơn."
         },
         {
             "c": [
-                1293,
-                635,
-                1348,
-                659
+                19,
+                567,
+                1004,
+                1366
             ],
             "c_grid": [
-                863,
-                424,
-                898,
-                439
+                20,
+                400,
+                980,
+                960
             ],
-            "r": "Chữ 'VOUCHER 50%' thứ hai (trên nền đỏ cam) có độ tương phản 1.69:1 — vẫn không đạt chuẩn, kèm sai lệch căn giữa dọc.",
-            "s": "critical",
-            "g": "color_theory",
-            "id": 4,
-            "issue": "Phần tử 'VOUCHER 50%' thứ hai có độ tương phản thấp và sai lệch vị trí dọc so với phần tử trên.",
-            "suggestion": "Cùng xử lý như trên: tăng độ tương phản và căn chỉnh lại vị trí dọc để đảm bảo tính nhất quán trong bố cục."
-        },
-        {
-            "c": [
-                807,
-                879,
-                1010,
-                952
-            ],
-            "c_grid": [
-                539,
-                587,
-                673,
-                634
-            ],
-            "r": "Chữ 'Giải nhiệt mỗi ngày!' có độ tương phản 3.23:1, chưa đạt chuẩn WCAG. Đặt trên nền cam đỏ gây nhiễu figure-ground với sản phẩm phía sau.",
+            "r": "Nhiều yếu tố đồ họa phụ (trái tim, bướm, hoa, khối băng) được đặt quá gần chai Coca-Cola, gây nhiễu và làm mờ đi hình ảnh sản phẩm — vi phạm nguyên tắc figure-ground clarity.",
             "s": "major",
             "g": "poster_design",
-            "id": 2,
-            "issue": "Dòng chữ 'Giải nhiệt mỗi ngày!' bị chồng lên sản phẩm, gây hiện tượng figure-ground confusion và độ tương phản chưa đủ.",
-            "suggestion": "Giảm độ bão hòa nền hoặc tăng độ mờ (opacity ~20%) của nền, đồng thời dùng font đậm hơn để đảm bảo tính nổi bật."
-        },
-        {
-            "c": [
-                255,
-                974,
-                307,
-                991
-            ],
-            "c_grid": [
-                171,
-                650,
-                204,
-                660
-            ],
-            "r": "Chữ 'Giàu chất xơ' có độ tương phản 1.54:1 — không đủ để đọc trên nền xanh lá đậm. Đây là thông tin sản phẩm quan trọng.",
-            "s": "major",
-            "g": "color_theory",
-            "id": 5,
-            "issue": "Thông tin dinh dưỡng 'Giàu chất xơ' có độ tương phản quá thấp (1.54:1)",
-            "suggestion": "Chuyển chữ sang màu trắng hoặc vàng nhạt, hoặc giảm độ bão hòa nền để đạt độ tương phản tối thiểu 4.5:1."
+            "id": 4,
+            "issue": "Hiện tượng tranh chấp hình nền (figure-ground confusion) do bố cục quá chật chội và thiếu khoảng trống",
+            "suggestion": "Tăng khoảng cách giữa chai và các nhân vật phụ; di chuyển một số nhân vật ra ngoài vùng trung tâm; hoặc giảm độ bão hòa/độ trong suốt của các yếu tố phụ để chúng trở thành nền hỗ trợ."
         }
     ],
-    "te": 6,
+    "te": 5,
     "isz": {
-        "w": 1500,
-        "h": 1500
+        "w": 1024,
+        "h": 1422
     },
     "coord_space": "frame_pixel",
     "ss": {
         "minor": 0,
-        "major": 2,
+        "major": 1,
         "critical": 4
     },
     "compliments": [
-        "Màu sắc tươi sáng, phong cách hoạt hình dễ thương phù hợp với đối tượng trẻ em và phụ huynh.",
-        "Sử dụng hình ảnh sản phẩm thực tế kết hợp với trái cây tươi tạo cảm giác tự nhiên, an toàn và hấp dẫn.",
-        "Logo 'Sunny Baby' được thiết kế sinh động, dễ nhớ và có tính nhận diện cao.",
-        "Bố cục tổng thể cân đối, sử dụng không gian âm (white space) hợp lý giữa các khối thông tin.",
-        "Các biểu tượng ưu đãi được thiết kế đơn giản, dễ hiểu và mang tính biểu tượng cao."
+        "Màu sắc tổng thể hài hòa, sử dụng phối màu bổ sung (xanh lá – đỏ) đúng theo nguyên tắc thiết kế thương hiệu Coca-Cola.",
+        "Phong cách hoạt hình vui tươi, sinh động, phù hợp với thông điệp 'Open Happiness' và mục tiêu khán giả trẻ.",
+        "Việc kết hợp nhân vật biểu tượng (trái tim, khối băng) với sản phẩm tạo nên sự độc đáo và dễ nhớ, giúp tăng tính tương tác với người xem.",
+        "Bố cục tổng thể cân đối, với chai nước ngọt ở trung tâm và các yếu tố được sắp xếp theo vòng cung, dẫn dắt mắt người xem một cách tự nhiên."
     ],
     "errors": [
         {
             "c": [
-                467,
                 76,
-                693,
-                103
+                0,
+                412,
+                236
             ],
-            "r": "Nút 'SHOPPING NOW' có độ tương phản chữ 3.55:1, không đạt mức tối thiểu 4.5:1 theo WCAG. Cần thay đổi màu chữ thành trắng đậm hơn hoặc thêm lớp phủ tối nhẹ lên nền xanh dương.",
-            "issue": "Nút hành động 'SHOPPING NOW' có độ tương phản chữ không đạt chuẩn WCAG (3.55:1 < 4.5:1)",
-            "suggestion": "Chuyển chữ sang màu trắng đậm hoặc thêm lớp phủ tối nhẹ (rgba(0,0,0,0.1)) lên nền xanh dương để đạt độ tương phản ≥4.5:1.",
+            "r": "Dòng chữ 'Yeah' đầu tiên có độ tương phản chỉ 2.67:1, không đạt mức tối thiểu 4.5:1 theo WCAG. Cần tăng độ sáng của chữ hoặc thêm lớp nền tối nhẹ để cải thiện khả năng đọc từ xa.",
+            "issue": "Độ tương phản chữ kém (WCAG Contrast) — tỷ lệ 2.67:1, không đạt mức tối thiểu 4.5:1",
+            "suggestion": "Chuyển chữ sang màu trắng tinh (RGB 255,255,255) hoặc vàng nhạt (RGB 255,230,180), đồng thời thêm lớp bóng mờ nhẹ hoặc nền tối nhẹ (rgba(0,0,0,0.05)) để nâng cao độ tương phản.",
             "s": "critical",
             "g": "color_theory"
         },
         {
             "c": [
-                825,
-                297,
-                931,
-                312
+                195,
+                30,
+                695,
+                263
             ],
-            "r": "Chữ 'QUÀ TẶNG 179K' có độ tương phản 1.10:1, không đạt mức tối thiểu 4.5:1. Nên thay đổi màu chữ hoặc nền để tăng độ tương phản.",
-            "issue": "Thông tin khuyến mãi 'QUÀ TẶNG 179K' có độ tương phản quá thấp (1.10:1)",
-            "suggestion": "Chuyển chữ sang màu đen hoặc trắng đậm, hoặc tăng độ bão hòa nền để đạt độ tương phản tối thiểu 4.5:1.",
+            "r": "Dòng chữ 'Yeah Yeah La la' thứ hai có độ tương phản ~2.37:1, không đạt mức tối thiểu 4.5:1. Đây là lỗi lặp lại, ảnh hưởng đến khả năng nhận diện thông điệp chính.",
+            "issue": "Độ tương phản chữ kém (WCAG Contrast) — tỷ lệ 2.37:1, không đạt mức tối thiểu 4.5:1",
+            "suggestion": "Sử dụng font chữ đậm hơn và tăng độ tương phản bằng cách giảm độ bão hòa của nền hoặc thêm đường viền mỏng màu đen cho chữ.",
             "s": "critical",
             "g": "color_theory"
         },
         {
             "c": [
-                539,
-                587,
-                673,
-                634
+                286,
+                125,
+                697,
+                296
             ],
-            "r": "Chữ 'Giải nhiệt mỗi ngày!' có độ tương phản 3.23:1, chưa đạt chuẩn WCAG. Đặt trên nền cam đỏ gây nhiễu figure-ground với sản phẩm phía sau.",
-            "issue": "Dòng chữ 'Giải nhiệt mỗi ngày!' bị chồng lên sản phẩm, gây hiện tượng figure-ground confusion và độ tương phản chưa đủ.",
-            "suggestion": "Giảm độ bão hòa nền hoặc tăng độ mờ (opacity ~20%) của nền, đồng thời dùng font đậm hơn để đảm bảo tính nổi bật.",
+            "r": "Dòng chữ 'La la' cuối cùng có độ tương phản ~2.34:1, không đạt mức tối thiểu 4.5:1. Kích thước không tuân thủ lưới 8pt grid (421px → nên là 416/424px; 243px → nên là 240/248px).",
+            "issue": "Độ tương phản chữ kém và sai lệch kích thước lưới",
+            "suggestion": "Căn chỉnh lại chiều rộng thành 416px hoặc 424px, chiều cao thành 240px hoặc 248px, đồng thời tăng độ tương phản bằng cách chuyển nền phía sau chữ sang tone xanh nhạt hơn hoặc thêm lớp phủ màu trắng mờ.",
+            "s": "critical",
+            "g": "color_theory"
+        },
+        {
+            "c": [
+                365,
+                700,
+                657,
+                738
+            ],
+            "r": "Dòng chữ 'OPEN HAPPINESS' trên dải băng đỏ có độ tương phản cực kỳ thấp (1.18:1), không đạt mức tối thiểu 3:1 theo WCAG. Đây là lỗi nghiêm trọng vì nằm ngay trên sản phẩm trung tâm.",
+            "issue": "Độ tương phản chữ kém — tỷ lệ 1.18:1, không đạt mức tối thiểu 3:1",
+            "suggestion": "Chuyển chữ sang màu trắng hoặc kem (RGB 250,245,230), hoặc thay đổi màu nền dải băng sang đỏ đậm hơn (RGB 180,0,0) để tạo độ tương phản tốt hơn.",
+            "s": "critical",
+            "g": "color_theory"
+        },
+        {
+            "c": [
+                20,
+                400,
+                980,
+                960
+            ],
+            "r": "Nhiều yếu tố đồ họa phụ (trái tim, bướm, hoa, khối băng) được đặt quá gần chai Coca-Cola, gây nhiễu và làm mờ đi hình ảnh sản phẩm — vi phạm nguyên tắc figure-ground clarity.",
+            "issue": "Hiện tượng tranh chấp hình nền (figure-ground confusion) do bố cục quá chật chội và thiếu khoảng trống",
+            "suggestion": "Tăng khoảng cách giữa chai và các nhân vật phụ; di chuyển một số nhân vật ra ngoài vùng trung tâm; hoặc giảm độ bão hòa/độ trong suốt của các yếu tố phụ để chúng trở thành nền hỗ trợ.",
             "s": "major",
             "g": "poster_design"
-        },
-        {
-            "c": [
-                863,
-                407,
-                898,
-                423
-            ],
-            "r": "Chữ 'VOUCHER 50%' có độ tương phản 1.34:1 — không đọc được trên nền đỏ cam. Đồng thời, sai lệch căn giữa dọc với phần tử trên làm mất tính nhất quán bố cục.",
-            "issue": "Thông tin voucher giảm giá có độ tương phản cực kỳ thấp (1.34:1) và sai lệch vị trí dọc so với phần tử trên.",
-            "suggestion": "Chuyển chữ sang màu trắng hoặc vàng sáng, và căn chỉnh lại chiều cao và vị trí dọc của cả ba phần tử ưu đãi để đồng bộ.",
-            "s": "critical",
-            "g": "color_theory"
-        },
-        {
-            "c": [
-                863,
-                424,
-                898,
-                439
-            ],
-            "r": "Chữ 'VOUCHER 50%' thứ hai (trên nền đỏ cam) có độ tương phản 1.69:1 — vẫn không đạt chuẩn, kèm sai lệch căn giữa dọc.",
-            "issue": "Phần tử 'VOUCHER 50%' thứ hai có độ tương phản thấp và sai lệch vị trí dọc so với phần tử trên.",
-            "suggestion": "Cùng xử lý như trên: tăng độ tương phản và căn chỉnh lại vị trí dọc để đảm bảo tính nhất quán trong bố cục.",
-            "s": "critical",
-            "g": "color_theory"
-        },
-        {
-            "c": [
-                171,
-                650,
-                204,
-                660
-            ],
-            "r": "Chữ 'Giàu chất xơ' có độ tương phản 1.54:1 — không đủ để đọc trên nền xanh lá đậm. Đây là thông tin sản phẩm quan trọng.",
-            "issue": "Thông tin dinh dưỡng 'Giàu chất xơ' có độ tương phản quá thấp (1.54:1)",
-            "suggestion": "Chuyển chữ sang màu trắng hoặc vàng nhạt, hoặc giảm độ bão hòa nền để đạt độ tương phản tối thiểu 4.5:1.",
-            "s": "major",
-            "g": "color_theory"
         }
     ],
     "detected_elements": [
         {
             "box_2d": [
-                144,
-                505,
-                215,
-                582
+                365,
+                303,
+                653,
+                970
             ],
-            "label": "grapefruit",
+            "label": "bottle",
             "score": 0.85,
             "consensus": false
         },
         {
             "box_2d": [
-                616,
-                513,
-                688,
-                581
+                0,
+                0,
+                998,
+                998
             ],
-            "label": "grapefruit",
+            "label": "poster",
             "score": 0.85,
             "consensus": false
         },
         {
             "box_2d": [
-                403,
-                534,
-                472,
-                600
-            ],
-            "label": "grapefruit",
-            "score": 0.85,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                216,
-                536,
-                277,
-                595
-            ],
-            "label": "grapefruit",
-            "score": 0.85,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                353,
-                532,
-                410,
-                594
-            ],
-            "label": "grapefruit",
-            "score": 0.85,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                542,
-                540,
-                613,
-                590
-            ],
-            "label": "grapefruit",
-            "score": 0.85,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                880,
-                878,
-                989,
-                990
-            ],
-            "label": "person",
-            "score": 0.85,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                842,
-                520,
-                915,
-                635
-            ],
-            "label": "person",
-            "score": 0.85,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                866,
-                932,
-                913,
-                989
-            ],
-            "label": "person",
-            "score": 0.85,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                217,
-                24,
-                393,
-                89
-            ],
-            "label": "text: </s>SUNNY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                467,
                 76,
-                693,
-                103
-            ],
-            "label": "text: SHOPPING NOW",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                302,
-                188,
-                411,
-                206
-            ],
-            "label": "text: CHO BÉ 12M+",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                445,
-                188,
-                582,
-                206
-            ],
-            "label": "text: XUAT XU: JAPAN",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                615,
-                188,
-                736,
-                206
-            ],
-            "label": "text: 999+ REVIEWS",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                825,
-                297,
-                931,
-                312
-            ],
-            "label": "text: QUA TANG 17K",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                864,
-                407,
-                898,
-                423
-            ],
-            "label": "text: SUNNY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                863,
-                424,
-                898,
-                439
-            ],
-            "label": "text: SUNMY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                863,
-                439,
-                895,
-                450
-            ],
-            "label": "text: SUNY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                863,
-                450,
-                895,
-                461
-            ],
-            "label": "text: SUNTY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                863,
-                461,
-                895,
-                471
-            ],
-            "label": "text: SUNRY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                827,
-                474,
-                925,
-                488
-            ],
-            "label": "text: VOUCHER 50%",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                539,
-                587,
-                673,
-                634
-            ],
-            "label": "text: Giai nhiet",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                171,
-                650,
-                204,
-                660
-            ],
-            "label": "text: Ciaoi nhiiet",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                227,
-                652,
-                252,
-                660
-            ],
-            "label": "text: SUNKY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                273,
-                651,
-                309,
-                659
-            ],
-            "label": "text: SUMMY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                333,
-                651,
-                354,
-                659
-            ],
-            "label": "text: SUMNY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                378,
-                651,
+                0,
                 412,
-                659
+                236
             ],
-            "label": "text: SUBY",
+            "label": "text: </s>yeak",
             "score": 0.8,
             "consensus": false
         },
         {
             "box_2d": [
-                430,
-                651,
-                464,
-                659
+                195,
+                30,
+                695,
+                263
             ],
-            "label": "text: SUGY",
+            "label": "text: Yeak yeak",
             "score": 0.8,
             "consensus": false
         },
         {
             "box_2d": [
-                550,
-                619,
-                674,
-                662
+                286,
+                125,
+                697,
+                296
             ],
-            "label": "text: MOi ngay!",
+            "label": "text: La la la",
             "score": 0.8,
             "consensus": false
         },
         {
             "box_2d": [
-                171,
-                659,
-                194,
-                666
+                383,
+                577,
+                634,
+                648
             ],
-            "label": "text: SUGG",
+            "label": "text: Coca-Cola",
             "score": 0.8,
             "consensus": false
         },
         {
             "box_2d": [
-                223,
-                659,
-                253,
-                666
+                365,
+                700,
+                657,
+                738
             ],
-            "label": "text: SUGGY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                273,
-                659,
-                309,
-                666
-            ],
-            "label": "text: SUMTY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                316,
-                659,
-                368,
-                666
-            ],
-            "label": "text: SUBy",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                378,
-                659,
-                414,
-                666
-            ],
-            "label": "text: SUNITY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                430,
-                659,
-                464,
-                666
-            ],
-            "label": "text: SURY",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                835,
-                649,
-                918,
-                666
-            ],
-            "label": "text: MOÇ TÜC 2H",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                239,
-                736,
-                760,
-                783
-            ],
-            "label": "text: Thach Tüi Tarami Nhât Bân",
-            "score": 0.8,
-            "consensus": false
-        },
-        {
-            "box_2d": [
-                88,
-                806,
-                911,
-                863
-            ],
-            "label": "text: CHAM MOILÁ THICH, HÜT NHE LÁ MÉ",
+            "label": "text: OPEN HAPPINESS",
             "score": 0.8,
             "consensus": false
         }
     ],
-    "markdown_report": "# Phản hồi thiết kế quảng cáo sản phẩm *Sunny Baby*\n\n## Tổng quan\nThiết kế quảng cáo sản phẩm sữa chua dẻo cho trẻ em của thương hiệu *Sunny Baby* sở hữu màu sắc tươi sáng, phong cách hoạt hình dễ thương — phù hợp với đối tượng mục tiêu là trẻ nhỏ và phụ huynh. Tuy nhiên, thiết kế đang gặp nhiều vấn đề nghiêm trọng về độ tương phản chữ, đặc biệt ở các nút hành động, thông tin sản phẩm và ưu đãi, khiến nội dung khó đọc từ xa hoặc trên thiết bị có độ sáng thấp. Ngoài ra, bố cục thiếu điểm nhấn rõ ràng: nhiều yếu tố (logo, sản phẩm, biểu tượng ưu đãi, văn bản) cùng chiếm không gian trung tâm, làm mất đi sự tập trung vào nhân vật chính và sản phẩm. Một số phần tử như dòng chữ *'Giải nhiệt mỗi ngày!'* được đặt chồng lên hình ảnh sản phẩm, gây nhiễu figure-ground. Thiết kế cũng chưa tuân thủ nguyên tắc *'một điểm nhấn chính'* theo quy tắc poster, dẫn đến cảm giác hỗn loạn và thiếu chuyên nghiệp trong truyền thông thương hiệu.\n\n## Chi tiết lỗi\n\n### 1. Nút hành động *'SHOPPING NOW'* — **Mức độ nghiêm trọng: CRITICAL**\n- **Vấn đề**: Độ tương phản chữ 3.55:1, không đạt mức tối thiểu 4.5:1 theo WCAG.\n- **Lý do**: Chữ trắng trên nền xanh dương đậm khiến người dùng khó đọc, đặc biệt khi xem từ xa hoặc trên màn hình có độ bão hòa thấp.\n- **Khuyến nghị**: Thay đổi màu chữ thành trắng đậm hơn hoặc thêm lớp phủ tối nhẹ (e.g., `rgba(0,0,0,0.1)`) lên nền xanh dương để đạt độ tương phản ≥4.5:1.\n\n### 2. Thông tin khuyến mãi *'QUÀ TẶNG 179K'* — **Mức độ nghiêm trọng: CRITICAL**\n- **Vấn đề**: Độ tương phản chỉ 1.10:1 — gần như không phân biệt được trên nền hồng nhạt.\n- **Lý do**: Người dùng có thể bỏ qua hoàn toàn thông tin ưu đãi quan trọng này.\n- **Khuyến nghị**: Chuyển chữ sang màu đen hoặc trắng đậm, hoặc tăng độ bão hòa nền (ví dụ: chuyển từ hồng nhạt sang hồng đậm hơn).\n\n### 3. Dòng chữ *'Giải nhiệt mỗi ngày!'* — **Mức độ nghiêm trọng: MAJOR**\n- **Vấn đề**: Độ tương phản 3.23:1, chưa đạt chuẩn WCAG; đặt chồng lên hình ảnh sản phẩm gây *figure-ground confusion*.\n- **Lý do**: Làm mờ đi hình ảnh sản phẩm và khiến thông điệp trở nên lộn xộn.\n- **Khuyến nghị**: Giảm độ bão hòa nền (tint nhẹ) hoặc tăng độ mờ (opacity ~20%) của nền, đồng thời dùng font chữ đậm hơn và kích thước lớn hơn để đảm bảo tính nổi bật mà không làm mất đi hình ảnh sản phẩm.\n\n### 4. Thông tin voucher *'VOUCHER 50%'* — **Mức độ nghiêm trọng: CRITICAL**\n- **Vấn đề**: Độ tương phản 1.34:1 — không đọc được trên nền đỏ cam; sai lệch căn giữa dọc với phần tử trên.\n- **Lý do**: Là yếu tố thúc đẩy mua hàng, nhưng bị che lấp bởi nền, khiến người dùng bỏ qua cơ hội tiết kiệm.\n- **Khuyến nghị**: Chuyển chữ sang màu trắng hoặc vàng sáng, hoặc chuyển nền sang màu xám đậm hơn (giữ tông màu tổng thể), đồng thời căn chỉnh lại chiều cao và vị trí dọc của cả ba phần tử ưu đãi (*'VOUCHER 50%*, *'MOÇ TÜC 2H'*, *'QUÀ TẶNG 179K'*) để đảm bảo tính nhất quán.\n\n### 5. Thông tin dinh dưỡng *'Giàu chất xơ'* — **Mức độ nghiêm trọng: MAJOR**\n- **Vấn đề**: Độ tương phản 1.54:1 — không đủ để đọc trên nền xanh lá đậm.\n- **Lý do**: Người dùng thường quan sát kỹ thông tin sản phẩm trước khi mua; nếu không thể đọc được, họ sẽ nghi ngờ chất lượng.\n- **Khuyến nghị**: Chuyển chữ sang màu trắng hoặc vàng nhạt, hoặc giảm độ bão hòa nền (tint nhẹ) để đạt độ tương phản tối thiểu 4.5:1.\n\n## Khen ngợi\n- Màu sắc tươi sáng, phong cách hoạt hình dễ thương phù hợp với đối tượng trẻ em và phụ huynh.\n- Sử dụng hình ảnh sản phẩm thực tế kết hợp với trái cây tươi tạo cảm giác tự nhiên, an toàn và hấp dẫn.\n- Logo *'Sunny Baby'* được thiết kế sinh động, dễ nhớ và có tính nhận diện cao.\n- Bố cục tổng thể cân đối, sử dụng không gian âm (white space) hợp lý giữa các khối thông tin.\n- Các biểu tượng ưu đãi được thiết kế đơn giản, dễ hiểu và mang tính biểu tượng cao.\n\n---\n*Ghi chú: Tất cả các lỗi đều được kiểm tra và xác minh dựa trên tiêu chuẩn WCAG 2.1 Level AA. Các giải pháp đề xuất tuân thủ nguyên tắc thiết kế UX/UI chuyên nghiệp và phù hợp với yêu cầu thương hiệu.*",
+    "markdown_report": "# Phân tích Thiết kế Poster Coca-Cola: \"Yeah Yeah La la\"\n\n## Tổng quan\nThiết kế poster này thể hiện tinh thần vui vẻ, năng động và sáng tạo, với phong cách hoạt hình đầy màu sắc và sự kết hợp thú vị giữa sản phẩm Coca-Cola và các nhân vật biểu tượng như trái tim, khối băng, bướm… Tuy nhiên, thiết kế đang gặp một số lỗi nghiêm trọng về độ tương phản chữ và bố cục, làm giảm khả năng truyền thông hiệu quả, đặc biệt khi sử dụng trong môi trường thực tế (in ấn, display digital).\n\n## Lỗi Đã Xác Nhận\n\n### 1. Độ Tương Phản Chữ Quá Thấp (Lỗi Nghiêm Trọng)\n- **Vị trí**: Dòng chữ *'Yeah'* (phần đầu), *'Yeah Yeah La la'* (phần giữa), *'La la'* (phần cuối), và *'OPEN HAPPINESS'* trên dải băng.\n- **Mô tả**: Tất cả các dòng chữ đều có độ tương phản dưới mức yêu cầu theo WCAG 2.1 (tối thiểu 4.5:1 cho văn bản tiêu đề, 3:1 cho văn bản phụ). Đặc biệt, *'OPEN HAPPINESS'* chỉ đạt 1.18:1 — không thể đọc được từ xa.\n- **Hậu quả**: Người xem khó nhận diện thông điệp, làm giảm hiệu quả truyền thông và gây cảm giác thiếu chuyên nghiệp.\n- **Giải pháp đề xuất**:\n  - Chuyển chữ sang màu trắng tinh (RGB 255,255,255) hoặc vàng nhạt (RGB 255,230,180) trên nền xanh ngọc.\n  - Thêm lớp bóng mờ nhẹ (drop shadow) hoặc nền tối nhẹ (rgba(0,0,0,0.05)) để nâng cao độ tương phản.\n  - Với *'OPEN HAPPINESS'*, chuyển nền dải băng sang đỏ đậm hơn (RGB 180,0,0) và chữ sang trắng (contrast ~4.8:1).\n\n### 2. Bố Cục Không Có Điểm Nhấn Rõ Ràng (Lỗi Trung Bình – Nguy Hiểm)\n- **Vị trí**: Toàn bộ vùng xung quanh chai Coca-Cola.\n- **Mô tả**: Nhiều yếu tố đồ họa nhỏ (trái tim, bướm, hoa, khối băng) được đặt quá gần chai, gây hiện tượng *visual clutter* và làm mờ đi hình ảnh sản phẩm — vi phạm nguyên tắc *figure-ground clarity*.\n- **Hậu quả**: Người xem không biết đâu là điểm nhấn chính; sản phẩm không còn đóng vai trò trung tâm trong thiết kế.\n- **Giải pháp đề xuất**:\n  - Tăng khoảng cách (padding/margin) giữa chai và các nhân vật phụ.\n  - Di chuyển một số nhân vật ra ngoài vùng trung tâm (ví dụ: đưa trái tim lớn xuống dưới bên phải, không che khuất thân chai).\n  - Giảm độ bão hòa hoặc độ trong suốt của các yếu tố phụ để chúng trở thành nền hỗ trợ thay vì đối tượng chính.\n\n## Khen Ngợi\n- Màu sắc tổng thể hài hòa, sử dụng phối màu bổ sung (xanh lá – đỏ) đúng theo nguyên tắc thiết kế thương hiệu Coca-Cola.\n- Phong cách hoạt hình vui tươi, sinh động, phù hợp với thông điệp *'Open Happiness'* và mục tiêu khán giả trẻ.\n- Việc kết hợp nhân vật biểu tượng (trái tim, khối băng) với sản phẩm tạo nên sự độc đáo và dễ nhớ, giúp tăng tính tương tác với người xem.\n- Bố cục tổng thể cân đối, với chai nước ngọt ở trung tâm và các yếu tố được sắp xếp theo vòng cung, dẫn dắt mắt người xem một cách tự nhiên.\n\n> *Ghi chú: Các lỗi được ưu tiên xử lý theo mức độ ảnh hưởng đến trải nghiệm người dùng và khả năng truyền thông thương hiệu. Việc điều chỉnh độ tương phản và bố cục sẽ giúp poster đạt chuẩn in ấn, hiển thị kỹ thuật số và đáp ứng yêu cầu brand guidelines.*",
     "details": [
         {
             "box_2d": [
-                467,
                 76,
-                693,
-                103
+                0,
+                412,
+                236
             ],
-            "issue": "Nút 'SHOPPING NOW' có độ tương phản chữ (3.55:1) dưới ngưỡng tối thiểu 4.5:1 theo WCAG, khiến chữ 'SHOPPING NOW' (màu trắng) khó đọc trên nền xanh dương đậm, đặc biệt khi người dùng xem từ xa hoặc trên màn hình có độ bão hòa thấp.",
-            "guideline_violation": "[Color Theory > IX. Color Relationships] — Rule 27: Độ tương phản phải đạt mức tối thiểu 4.5:1 cho văn bản thân (body text), đặc biệt là nút hành động quan trọng.",
-            "ux_explanation": "Nút hành động là yếu tố quyết định chuyển đổi; nếu người dùng không thể đọc được lời kêu gọi hành động ngay lập tức, tỷ lệ chuyển đổi sẽ giảm mạnh.",
-            "suggestion": "Tăng độ tương phản bằng cách thay đổi màu chữ thành trắng đậm hơn (hoặc vàng cam) hoặc thêm lớp phủ tối nhẹ (e.g., rgba(0,0,0,0.1)) lên nền xanh để nâng cao độ tương phản lên ≥4.5:1."
+            "issue": "Dòng chữ 'Yeah' đầu tiên có độ tương phản rất thấp (khoảng 2.67:1 so với nền xanh ngọc), không đạt tiêu chuẩn WCAG 2.1 Level AA (tối thiểu 4.5:1). Điều này khiến người xem khó nhận diện từ xa, đặc biệt khi poster được sử dụng trong môi trường ánh sáng mạnh hoặc từ khoảng cách xa.",
+            "guideline_violation": "[Color Theory > IX. Color Relationships] — Rule 27: Độ tương phản phải đủ cao để đảm bảo khả năng đọc; nếu không, cần tăng độ sáng của chữ hoặc thêm lớp phủ tối nhẹ.",
+            "ux_explanation": "Chữ trắng trên nền xanh ngọc đậm tạo hiện tượng 'blending' — mất đi sự phân biệt giữa chữ và nền, gây khó chịu thị giác và làm giảm tốc độ tiếp nhận thông điệp.",
+            "suggestion": "Tăng độ sáng của chữ bằng cách chuyển sang màu trắng tinh (RGB 255,255,255) hoặc vàng nhạt (RGB 255,230,180), đồng thời thêm một lớp bóng mờ nhẹ (drop shadow) hoặc nền tối nhẹ (rgba(0,0,0,0.05)) để nâng cao độ tương phản mà không làm thay đổi phong cách."
         },
         {
             "box_2d": [
-                825,
-                297,
-                931,
-                312
+                195,
+                30,
+                695,
+                263
             ],
-            "issue": "Chữ 'QUÀ TẶNG 179K' có độ tương phản rất thấp (1.10:1), gần như không phân biệt được trên nền hồng nhạt, gây khó khăn cho người dùng khi tìm kiếm thông tin khuyến mãi.",
-            "guideline_violation": "[Typography > II. Hierarchy and Reading Order] — Rule 4: Các thông tin ưu đãi cần nổi bật và dễ đọc ngay lập tức — nên có độ tương phản ≥4.5:1.",
-            "ux_explanation": "Thông tin khuyến mãi là yếu tố thúc đẩy mua hàng; nếu bị che lấp hoặc khó đọc, người dùng có thể bỏ qua hoàn toàn.",
-            "suggestion": "Chuyển chữ sang màu đen hoặc trắng đậm, hoặc tăng độ bão hòa nền (ví dụ: chuyển từ hồng nhạt sang hồng đậm hơn) để đạt độ tương phản tối thiểu 4.5:1."
+            "issue": "Dòng chữ 'Yeah Yeah La la' thứ hai cũng có độ tương phản chỉ ~2.37:1, vượt quá giới hạn an toàn cho văn bản quan trọng. Đây là lỗi lặp lại, cho thấy hệ thống màu chưa được kiểm soát chặt chẽ trong vùng tiêu đề.",
+            "guideline_violation": "[Typography > II. Hierarchy and Reading Order] — Rule 4: Tiêu đề phải nổi bật nhất, có độ tương phản cao để dẫn dắt mắt người xem ngay lập tức vào thông điệp chính.",
+            "ux_explanation": "Với kích thước lớn và vị trí trung tâm, dòng chữ này nên là yếu tố thu hút đầu tiên — nhưng hiện tại nó bị ‘chìm’ trong nền, làm mất đi vai trò định hướng của nó.",
+            "suggestion": "Sử dụng font chữ có độ dày (weight) cao hơn (ví dụ: bold hoặc extra-bold) và tăng độ tương phản bằng cách giảm độ bão hòa của nền hoặc thêm đường viền mỏng màu đen (stroke) cho chữ."
         },
         {
             "box_2d": [
-                539,
-                587,
-                673,
-                634
+                286,
+                125,
+                697,
+                296
             ],
-            "issue": "Chữ 'Giải nhiệt mỗi ngày!' trên nền cam đỏ có độ tương phản 3.23:1 — vẫn chưa đủ theo chuẩn WCAG, đặc biệt khi đặt trên nền có độ sáng cao và cạnh tranh với hình ảnh sản phẩm phía sau.",
-            "guideline_violation": "[Poster Design > I. Elements and Getting Attention] — Rule 4: Mỗi poster chỉ nên có một điểm nhấn chính; nếu nhiều yếu tố cùng thu hút sự chú ý, người xem sẽ không biết đâu là thông điệp cốt lõi.",
-            "ux_explanation": "Dòng chữ này được đặt ngay trên hình ảnh sản phẩm, tạo hiện tượng 'figure-ground confusion', làm mờ đi hình ảnh sản phẩm và khiến thông điệp trở nên lộn xộn.",
-            "suggestion": "Giảm độ bão hòa của nền (tint nhẹ) hoặc tăng độ mờ (opacity ~20%) của nền, đồng thời sử dụng font chữ đậm hơn và kích thước lớn hơn để đảm bảo tính nổi bật mà không làm mất đi hình ảnh sản phẩm."
+            "issue": "Dòng chữ 'La la' cuối cùng có độ tương phản ~2.34:1, vẫn dưới mức yêu cầu. Đồng thời, chiều rộng và chiều cao của khối chữ không khớp với lưới 8pt grid — điều này có thể gây sai lệch trong quy trình in ấn nếu không được điều chỉnh.",
+            "guideline_violation": "[Layout Rules > V. Orientation and Wayfinding] — Rule 16: Vị trí và kích thước phải tuân thủ hệ thống lưới để đảm bảo tính ổn định và dễ dự đoán trong bố cục.",
+            "ux_explanation": "Kích thước không chuẩn sẽ gây ra sự chênh lệch khi thiết kế đa nền tảng (in ấn, web, mobile), làm mất tính nhất quán của brand identity.",
+            "suggestion": "Căn chỉnh lại chiều rộng thành 416px hoặc 424px, chiều cao thành 240px hoặc 248px, đồng thời tăng độ tương phản bằng cách chuyển nền phía sau chữ sang tone xanh nhạt hơn hoặc thêm lớp phủ màu trắng mờ (opacity 0.1–0.2)."
         },
         {
             "box_2d": [
-                863,
-                407,
-                898,
-                423
+                365,
+                700,
+                657,
+                738
             ],
-            "issue": "Chữ 'VOUCHER 50%' có độ tương phản 1.34:1 — quá thấp, nằm trong nhóm 'không thể đọc được' theo tiêu chuẩn WCAG.",
-            "guideline_violation": "[Typography > V. Technical and Structural Rules] — Rule 15: Không nên dùng quá nhiều font, nhưng quan trọng hơn là không nên dùng font có độ tương phản kém cho thông tin quan trọng.",
-            "ux_explanation": "Một trong những yếu tố khuyến khích mua hàng — voucher giảm giá — lại bị che lấp bởi nền màu đỏ cam, khiến người dùng bỏ qua cơ hội tiết kiệm.",
-            "suggestion": "Đổi màu chữ sang trắng hoặc vàng sáng, hoặc chuyển nền sang màu xám đậm hơn (để giữ tông màu tổng thể) nhằm đạt độ tương phản tối thiểu 4.5:1."
+            "issue": "Dòng chữ 'OPEN HAPPINESS' trên dải băng đỏ có độ tương phản cực kỳ thấp (1.18:1), thậm chí không đạt mức tối thiểu 3:1 theo WCAG Level AAA — đây là lỗi nghiêm trọng nhất vì nó nằm ngay trên sản phẩm trung tâm, nơi người xem tập trung nhất.",
+            "guideline_violation": "[Poster Design > I. Elements and Getting Attention] — Rule 4: Một focal point duy nhất là bắt buộc; nếu văn bản trên sản phẩm không đọc được, sản phẩm sẽ không còn chức năng truyền tải thông điệp.",
+            "ux_explanation": "Chữ đỏ trên nền đỏ đậm (đặc biệt là khi có độ bão hòa cao) khiến người xem phải squint mới nhìn thấy, làm giảm hiệu quả truyền thông và gây cảm giác “không chuyên nghiệp”.",
+            "suggestion": "Chuyển chữ sang màu trắng hoặc kem (RGB 250,245,230), hoặc thay đổi màu nền dải băng sang đỏ đậm hơn (RGB 180,0,0) để tạo độ tương phản tốt hơn — ví dụ: white on dark red (contrast ~4.8:1)."
         },
         {
             "box_2d": [
-                863,
-                424,
-                898,
-                439
+                20,
+                400,
+                980,
+                960
             ],
-            "issue": "Chữ 'VOUCHER 50%' tiếp tục bị lỗi tương phản (1.69:1), kèm theo sai lệch căn giữa dọc so với phần tử bên trên — làm mất tính nhất quán trong bố cục.",
-            "guideline_violation": "[Layout Rules > V. Orientation and Wayfinding] — Rule 16: Vị trí và khoảng cách giữa các phần tử phải nhất quán để người dùng nhận diện mối liên hệ.",
-            "ux_explanation": "Các phần tử ưu đãi được xếp dọc, nhưng do sai lệch vị trí, người dùng phải điều chỉnh mắt để đọc — gây mệt mỏi và giảm khả năng chuyển đổi.",
-            "suggestion": "Căn chỉnh lại chiều cao và vị trí dọc của cả ba phần tử 'VOUCHER 50%', 'MOÇ TÜC 2H', và 'QUÀ TẶNG 179K' sao cho chúng cùng chia sẻ một đường trung tâm dọc rõ ràng."
-        },
-        {
-            "box_2d": [
-                171,
-                650,
-                204,
-                660
-            ],
-            "issue": "Dòng chữ 'Giàu chất xơ' có độ tương phản 1.54:1 — không đủ để đọc rõ, đặc biệt khi đặt trên nền xanh lá đậm.",
-            "guideline_violation": "[Typography > II. Hierarchy and Reading Order] — Rule 4: Thông tin sản phẩm (như thành phần dinh dưỡng) cần dễ đọc, dù là font nhỏ.",
-            "ux_explanation": "Người dùng thường quan sát kỹ thông tin sản phẩm trước khi mua; nếu không thể đọc được, họ sẽ nghi ngờ chất lượng hoặc bỏ qua sản phẩm.",
-            "suggestion": "Tăng độ tương phản bằng cách chuyển chữ sang màu trắng hoặc vàng nhạt, hoặc giảm độ bão hòa nền (tint nhẹ) để đạt ít nhất 4.5:1."
+            "issue": "Nhiều yếu tố đồ họa phụ như trái tim, bướm, hoa, khối băng được đặt quá gần chai Coca-Cola, gây hiện tượng 'visual clutter' và làm mờ đi hình ảnh sản phẩm — vi phạm nguyên tắc figure-ground clarity.",
+            "guideline_violation": "[Poster Design > II. Composition and Spatial Structure] — Rule 7: Ground (nền) không được cạnh tranh với figure (chính thể); nếu không, người xem sẽ không biết đâu là điểm nhấn chính.",
+            "ux_explanation": "Chai nước ngọt là yếu tố trung tâm, nhưng các nhân vật nhỏ và chi tiết rải rác xung quanh khiến mắt người xem bị phân tán, không xác định được trọng tâm của thiết kế.",
+            "suggestion": "Tăng khoảng cách (padding/margin) giữa chai và các nhân vật phụ; di chuyển một số nhân vật ra ngoài vùng trung tâm (ví dụ: đưa trái tim lớn xuống dưới bên phải, không che khuất thân chai); hoặc giảm độ bão hòa/độ trong suốt của các yếu tố phụ để chúng trở thành nền hỗ trợ chứ không phải đối tượng chính."
         }
     ],
     "analyzed_size": [
-        1500,
-        1500
+        1024,
+        1422
     ]
 }

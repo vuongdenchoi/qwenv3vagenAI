@@ -1,0 +1,7 @@
+{
+  "fe2a14413982cb1904f492c9ea5a6713": {
+    "title": "Understanding Success Criterion 1.4.3: Contrast (Minimum) | WAI | W3C",
+    "url": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum",
+    "excerpt": "The visual presentation of text and images of text has a contrast ratio of at least 4.5:1, except for the following:\n...\nThe 3:1 and 4.5:1 contrast ratios referenced in this success criterion are intended to be treated as threshold values. When comparing the computed contrast ratio to the Success Criterion ratio, the computed values should not be rounded (e.g., 4.499:1 would not meet the 4.5:1 threshold).\n...\nA contrast ratio of 3:1 is the minimum level recommended by [ISO-9241-3] and [ANSI-HFES-100-1988] for standard text and vision. The 4.5:1 ratio is used in this success criterion to account for the loss in contrast that results from moderately low visual acuity, congenital or acquired color deficiencies, or the loss of contrast sensitivity that typically accompanies aging.\n...\nThe contrast ratio of 4.5:1 was chosen for level AA because it compensated for the loss in contrast sensitivity usually experienced by users with vision loss equivalent to approximately 20/40 vision. (20/40 calculates to approximately 4.5:1.) 20/40 is commonly reported as typical visual acuity of elders at roughly age 80. [GITTINGS-FOZARD]"
+  }
+}
