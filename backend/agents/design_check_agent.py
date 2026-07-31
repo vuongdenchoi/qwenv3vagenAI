@@ -4,6 +4,7 @@ DesignCheckAgent – orchestrator điều phối toàn bộ pipeline.
 import json
 import mimetypes
 from typing import Optional
+import concurrent.futures
 from token_estimate import estimate_phase3, log_estimate_vs_actual
 from .retrieval_agent import RetrievalAgent
 from .prompt_agent import PromptAgent
@@ -130,10 +131,14 @@ class DesignCheckAgent:
         print("[UX Audit] Starting Layer 1 - Ensemble Grounding...")
         
         # 1. Local Grounding
-        florence_boxes = self.florence_agent.detect_elements(image_bytes)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_florence = executor.submit(self.florence_agent.detect_elements, image_bytes)
+            future_owlvit = executor.submit(self.owlvit_agent.detect_elements, image_bytes)
+            
+            florence_boxes = future_florence.result()
+            owlvit_boxes = future_owlvit.result()
+            
         print(f"[UX Audit] Agent 1A Florence-2 detected {len(florence_boxes)} elements.")
-        
-        owlvit_boxes = self.owlvit_agent.detect_elements(image_bytes)
         print(f"[UX Audit] Agent 1B OWL-ViT detected {len(owlvit_boxes)} elements.")
         
         # 2. Consensus Filter
@@ -142,10 +147,14 @@ class DesignCheckAgent:
         
         # 3. Layer 2: Specialized Auditors
         print("[UX Audit] Starting Layer 2 - Specialized Pipeline...")
-        geom_errors = self.geom_auditor.audit(image_bytes, consensus_boxes)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_geom = executor.submit(self.geom_auditor.audit, image_bytes, consensus_boxes)
+            future_sem = executor.submit(self.sem_checker.audit, consensus_boxes)
+            
+            geom_errors = future_geom.result()
+            sem_errors = future_sem.result()
+            
         print(f"[UX Audit] Agent 2A Geometric Auditor found {len(geom_errors)} errors.")
-        
-        sem_errors = self.sem_checker.audit(consensus_boxes)
         print(f"[UX Audit] Agent 2B Semantic Checker found {len(sem_errors)} errors.")
         
         # 4. Error Aggregation
@@ -175,16 +184,20 @@ class DesignCheckAgent:
             "icon design symbol legibility style UI"
         ]
         
-        for q in domains_to_query:
-            try:
-                if boosting_categories:
-                    cat_rules = self.retriever.retrieve(q, boosting_categories=boosting_categories)
-                else:
-                    cat_rules = self.retriever.retrieve(q)
-                # Keep top 3 rules from each domain to allow diverse coverage
-                retrieved_rules.extend(cat_rules[:3])
-            except Exception as e:
-                print(f"[UX Audit] RAG query for '{q}' failed: {e}")
+        def retrieve_domain(q):
+            if boosting_categories:
+                return self.retriever.retrieve(q, boosting_categories=boosting_categories)[:3]
+            return self.retriever.retrieve(q)[:3]
+            
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(domains_to_query)) as executor:
+            future_to_domain = {executor.submit(retrieve_domain, q): q for q in domains_to_query}
+            for future in concurrent.futures.as_completed(future_to_domain):
+                q = future_to_domain[future]
+                try:
+                    cat_rules = future.result()
+                    retrieved_rules.extend(cat_rules)
+                except Exception as e:
+                    print(f"[UX Audit] RAG query for '{q}' failed: {e}")
                 
         # Deduplicate retrieved rules while keeping order
         seen_rules = set()
