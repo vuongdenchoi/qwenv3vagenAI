@@ -260,6 +260,11 @@ def classify_image_type(image_bytes: bytes) -> dict:
     
     return {"type": "design", "confidence": 1.0, "signals": []}
 
+def sanitize_secret(text: str, secret: str) -> str:
+    if secret and isinstance(text, str) and secret in text:
+        return text.replace(secret, "***REDACTED***")
+    return text
+
 
 def generate_or_edit_image(key: str, prompt: str, image_bytes: Optional[bytes] = None) -> dict:
     """
@@ -316,7 +321,8 @@ def generate_or_edit_image(key: str, prompt: str, image_bytes: Optional[bytes] =
                     "image_url": image_url,
                     "image_bytes": dl_bytes
                 }
-        return {"success": False, "error": f"Lỗi xAI API: {resp.text}"}
+        safe_error = sanitize_secret(resp.text, actual_grok_key)
+        return {"success": False, "error": f"Lỗi xAI API: {safe_error}"}
     except Exception as e:
         return {"success": False, "error": f"Lỗi gọi API: {e}"}
 
@@ -2414,7 +2420,8 @@ async def chat_generate(req: ChatGenerateRequest):
         
     # Prepend system prompt to guide Grok
     system_prompt_text = (
-        "You are Grok Image Assistant. You can chat normally with the user. "
+        "You are WillaAI, a design AI assistant developed by Ewill. You can chat normally with the user. Do not mention Grok or x.ai. "
+        "CRITICAL: If the user asks for facts, statistics, users, customers, or information about WillaAI, Ewill, or any real-world data that you do not have explicitly in your context, DO NOT hallucinate or invent information. You must honestly state that you do not have that information.\n"
         "However, if the user asks you to generate, draw, or create an image, you MUST respond EXACTLY in the following format and nothing else:\n"
         "[GENERATE_IMAGE] <detailed_english_prompt_for_image_generation>\n"
         "Example: [GENERATE_IMAGE] A highly detailed cyberpunk city at night with neon lights and flying cars, 8k resolution, photorealistic.\n\n"
@@ -2452,7 +2459,8 @@ async def chat_generate(req: ChatGenerateRequest):
     try:
         resp = requests.post("https://api.x.ai/v1/chat/completions", headers=headers, json=payload, timeout=60)
         if not resp.ok:
-            raise HTTPException(status_code=resp.status_code, detail=f"Grok API error: {resp.text}")
+            safe_error = sanitize_secret(resp.text, actual_grok_key)
+            raise HTTPException(status_code=resp.status_code, detail=f"WillaAI API error: {safe_error}")
             
         data = resp.json()
         reply = data["choices"][0]["message"]["content"].strip()
@@ -2483,7 +2491,8 @@ async def chat_generate(req: ChatGenerateRequest):
                         image_url = images[0].get("url")
                         reply = f"Mình đã vẽ xong bức ảnh theo yêu cầu của bạn dựa trên mô tả:\n*{image_prompt}*"
                 else:
-                    reply = f"Đã có lỗi khi tạo ảnh từ Grok: {xai_resp.text}"
+                    safe_error = sanitize_secret(xai_resp.text, actual_grok_key)
+                    reply = f"Đã có lỗi khi tạo ảnh từ WillaAI: {safe_error}"
                     
         return {"text": reply, "image_url": image_url}
         
@@ -2568,7 +2577,8 @@ async def workspace_chat(req: WorkspaceChatRequest):
                 resp = requests.post("https://api.x.ai/v1/chat/completions", headers=headers, json=payload, timeout=60)
             
             if not resp.ok:
-                raise HTTPException(status_code=resp.status_code, detail=f"Grok API error: {resp.text}")
+                safe_error = sanitize_secret(resp.text, actual_grok_key)
+                raise HTTPException(status_code=resp.status_code, detail=f"WillaAI API error: {safe_error}")
             
         data = resp.json()
         reply = data["choices"][0]["message"]["content"].strip()

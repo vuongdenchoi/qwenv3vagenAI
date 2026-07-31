@@ -463,6 +463,11 @@ class InpaintAgent:
         composite.save(buf, format="PNG")
         return buf.getvalue()
 
+    def _sanitize(self, text: str) -> str:
+        if self.api_key and isinstance(text, str) and self.api_key in text:
+            return text.replace(self.api_key, "***REDACTED***")
+        return text
+
     # ------------------------------------------------------------------
     # 4. Goi WillaAI Image Edits API (x.ai)
     # ------------------------------------------------------------------
@@ -516,7 +521,8 @@ class InpaintAgent:
                 msg  = body.get("message", resp.text[:200])
             except Exception:
                 msg = resp.text[:200]
-            return {"success": False, "error": f"WillaAI API error {resp.status_code}: {msg}"}
+            safe_msg = self._sanitize(str(msg))
+            return {"success": False, "error": f"WillaAI API error {resp.status_code}: {safe_msg}"}
 
         try:
             body = resp.json()
@@ -526,7 +532,8 @@ class InpaintAgent:
 
             result_url = data[0].get("url")
             if not result_url:
-                return {"success": False, "error": f"Khong tim thay URL anh trong response: {str(body)[:300]}"}
+                safe_body = self._sanitize(str(body)[:300])
+                return {"success": False, "error": f"Khong tim thay URL anh trong response: {safe_body}"}
 
             print(f"[InpaintAgent] Result URL: {result_url[:80]}...")
 
@@ -542,7 +549,8 @@ class InpaintAgent:
             }
 
         except Exception as e:
-            return {"success": False, "error": f"Parse error: {e}. Body: {str(resp.text)[:300]}"}
+            safe_body = self._sanitize(str(resp.text)[:300])
+            return {"success": False, "error": f"Parse error: {e}. Body: {safe_body}"}
 
     def fix_errors(
         self,
